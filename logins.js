@@ -3,8 +3,8 @@ const dbConfig = {
     password: "pwd",
     server: "IP",
     database: "db",
-    port: "port",
-    trustServerCertificate: true
+    trustServerCertificate: true,
+    encrypt: false
 };
 
 module.exports  = dbConfig;

@@ -17,8 +17,8 @@ app.use(cors());
     console.log("App now running on port", port);
  });
 
- // This is a test for the students table in the remote sql server we gonna be using for the project
- // This also can be used as a template for other endpoints
+ // GET all records from students table 
+ // url: http://localhost:8080/students
  app.get('/students', function (req, res) {
     // connect to your database
     sql.connect(dbConfig, function (err) {   
@@ -27,9 +27,31 @@ app.use(cors());
 
         // create Request object
         var request = new sql.Request();
-           
+
         // query to the database and get the records
         request.query('select * from Students', function (err, recordset) {
+
+            if (err) console.log(err)
+            // send records as a response
+            res.send(recordset);
+
+        });
+    });
+});
+
+ // This is to show how to insert one input INT value into SQL query. 
+ // url: http://localhost:8080/students/1
+app.get('/students/:studentid', function (req, res) {
+// connect to your database
+    sql.connect(dbConfig, function (err) {   
+
+        if (err) console.log(err);
+
+        var request = new sql.Request();
+        
+        request
+        .input('studentid', sql.Int, req.params.studentid)
+        .query('select * from Students where ID = @studentid', function (err, recordset) {
             
             if (err) console.log(err)
             // send records as a response
@@ -39,10 +61,33 @@ app.use(cors());
     });
 });
 
+ // This is to show how to insert multiple inputs being INT and NVARCHAR. 
+ // url is http://localhost:8080/students/3/Tuna => returns student id = 3 ALİ and Tuna
+ app.get('/students/:studentid/:studentname', function (req, res) {
+    // connect to your database
+        sql.connect(dbConfig, function (err) {   
+    
+            if (err) console.log(err);
+    
+            var request = new sql.Request();
+            
+            request
+            .input('studentid', sql.Int, req.params.studentid)
+            .input('studentname', sql.NVarChar, req.params.studentname)
+            .query('select * from Students where ID = @studentid or Name = @studentname', function (err, recordset) {
+                
+                if (err) console.log(err)
+                // send records as a response
+                res.send(recordset);
+                
+            });
+        });
+    });
 
 // Empty route to GET the number of course requests.
 app.get("/course_requests_number", function(req , res){
     console.log("Request Received: GET number of course requests");
+    res.send("Course Request Number")
 });
 
 // Empty route to GET all the classes assigned to a tutor based on his/her Discord username.
