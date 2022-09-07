@@ -5,7 +5,7 @@ var cors = require('cors');
 var app = express(); 
 
 // import the dbConfig object from another file wehre we can hide it.
-var dbConfig = require("./databaseLogins")
+var dbConfig = require("./logins")
 
 // Body Parser Middleware
 app.use(bodyParser.json()); 
@@ -16,6 +16,26 @@ app.use(cors());
     var port = server.address().port;
     console.log("App now running on port", port);
  });
+
+ app.get('/students', function (req, res) {
+    // connect to your database
+    sql.connect(dbConfig, function (err) {   
+
+        if (err) console.log(err);
+
+        // create Request object
+        var request = new sql.Request();
+           
+        // query to the database and get the records
+        request.query('select * from Students', function (err, recordset) {
+            
+            if (err) console.log(err)
+            // send records as a response
+            res.send(recordset);
+            
+        });
+    });
+});
 
 // Empty route to GET the number of course requests.
 app.get("/course_requests_number", function(req , res){
@@ -51,3 +71,4 @@ app.post("/rescheduling_request_creation", function(req,res){
 app.post("/feedback_creation", function(req,res){
     console.log("Request Received: POST a feedback request");
 })
+
