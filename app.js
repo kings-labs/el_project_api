@@ -17,6 +17,8 @@ app.use(cors());
     console.log("App now running on port", port);
  });
 
+ // This is a test for the students table in the remote sql server we gonna be using for the project
+ // This also can be used as a template for other endpoints
  app.get('/students', function (req, res) {
     // connect to your database
     sql.connect(dbConfig, function (err) {   
@@ -36,6 +38,7 @@ app.use(cors());
         });
     });
 });
+
 
 // Empty route to GET the number of course requests.
 app.get("/course_requests_number", function(req , res){
