@@ -1,25 +1,93 @@
-var express = require("express");
-var bodyParser = require("body-parser");
-var sql = require("mssql");
-var cors = require('cors');
-var app = express(); 
+const express = require("express");
+const bodyParser = require("body-parser");
+const sql = require("mssql");
+const cors = require('cors');
+const app = express(); 
 
 // import the dbConfig object from another file wehre we can hide it.
-var dbConfig = require("./databaseLogins")
+const dbConfig = require("./logins")
 
 // Body Parser Middleware
 app.use(bodyParser.json()); 
 app.use(cors());
 
 //Setting up server
- var server = app.listen(process.env.PORT || 8080, function () {
-    var port = server.address().port;
+ const server = app.listen(process.env.PORT || 8080, function () {
+    const port = server.address().port;
     console.log("App now running on port", port);
  });
+
+ // GET all records from students table 
+ // url: http://localhost:8080/students
+ app.get('/students', function (req, res) {
+    // connect to your database
+    sql.connect(dbConfig, function (err) {   
+
+        if (err) console.log(err);
+
+        // create Request object
+        const request = new sql.Request();
+
+        // query to the database and get the records
+        request.query('select * from Students', function (err, recordset) {
+
+            if (err) console.log(err)
+            // send records as a response
+            res.send(recordset);
+
+        });
+    });
+});
+
+ // This is to show how to insert one input INT value into SQL query. 
+ // url: http://localhost:8080/students/1
+app.get('/students/:studentid', function (req, res) {
+// connect to your database
+    sql.connect(dbConfig, function (err) {   
+
+        if (err) console.log(err);
+
+        const request = new sql.Request();
+        
+        request
+        .input('studentid', sql.Int, req.params.studentid)
+        .query('select * from Students where ID = @studentid', function (err, recordset) {
+            
+            if (err) console.log(err)
+            // send records as a response
+            res.send(recordset);
+            
+        });
+    });
+});
+
+ // This is to show how to insert multiple inputs being INT and NVARCHAR. 
+ // url is http://localhost:8080/students/3/Tuna => returns student id = 3 ALİ and Tuna
+ app.get('/students/:studentid/:studentname', function (req, res) {
+    // connect to your database
+        sql.connect(dbConfig, function (err) {   
+    
+            if (err) console.log(err);
+    
+            const request = new sql.Request();
+            
+            request
+            .input('studentid', sql.Int, req.params.studentid)
+            .input('studentname', sql.NVarChar, req.params.studentname)
+            .query('select * from Students where ID = @studentid or Name = @studentname', function (err, recordset) {
+                
+                if (err) console.log(err)
+                // send records as a response
+                res.send(recordset);
+                
+            });
+        });
+    });
 
 // Empty route to GET the number of course requests.
 app.get("/course_requests_number", function(req , res){
     console.log("Request Received: GET number of course requests");
+    res.send("Course Request Number")
 });
 
 // Empty route to GET all the classes assigned to a tutor based on his/her Discord username.
@@ -51,3 +119,4 @@ app.post("/rescheduling_request_creation", function(req,res){
 app.post("/feedback_creation", function(req,res){
     console.log("Request Received: POST a feedback request");
 })
+

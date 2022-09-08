@@ -1,9 +1,10 @@
 const dbConfig = {
-    user:  "username",
+    user:  "user",
     password: "pwd",
-    server: "ip",
-    database: "dbName",
+    server: "IP",
+    database: "db",
     trustServerCertificate: true,
+    encrypt: false
 };
 
 module.exports  = dbConfig;
