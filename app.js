@@ -1,19 +1,19 @@
-var express = require("express");
-var bodyParser = require("body-parser");
-var sql = require("mssql");
-var cors = require('cors');
-var app = express(); 
+const express = require("express");
+const bodyParser = require("body-parser");
+const sql = require("mssql");
+const cors = require('cors');
+const app = express(); 
 
 // import the dbConfig object from another file wehre we can hide it.
-var dbConfig = require("./logins")
+const dbConfig = require("./logins")
 
 // Body Parser Middleware
 app.use(bodyParser.json()); 
 app.use(cors());
 
 //Setting up server
- var server = app.listen(process.env.PORT || 8080, function () {
-    var port = server.address().port;
+ const server = app.listen(process.env.PORT || 8080, function () {
+    const port = server.address().port;
     console.log("App now running on port", port);
  });
 
@@ -26,7 +26,7 @@ app.use(cors());
         if (err) console.log(err);
 
         // create Request object
-        var request = new sql.Request();
+        const request = new sql.Request();
 
         // query to the database and get the records
         request.query('select * from Students', function (err, recordset) {
@@ -47,7 +47,7 @@ app.get('/students/:studentid', function (req, res) {
 
         if (err) console.log(err);
 
-        var request = new sql.Request();
+        const request = new sql.Request();
         
         request
         .input('studentid', sql.Int, req.params.studentid)
@@ -69,7 +69,7 @@ app.get('/students/:studentid', function (req, res) {
     
             if (err) console.log(err);
     
-            var request = new sql.Request();
+            const request = new sql.Request();
             
             request
             .input('studentid', sql.Int, req.params.studentid)
