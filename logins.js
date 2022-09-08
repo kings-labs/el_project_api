@@ -1,8 +1,8 @@
 const dbConfig = {
-    user:  "sa",
-    password: "KingsLabs@22/23#",
-    server: "198.244.247.123",
-    database: "enlightenlearning",
+    user:  "user",
+    password: "pwd",
+    server: "IP",
+    database: "db",
     trustServerCertificate: true,
     encrypt: false
 };
