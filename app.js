@@ -80,7 +80,9 @@ app.get('/students/:studentid', function (req, res) {
                 // send records as a response
                 res.send(recordset);
                 
-            });
+            })
+
+    
         });
     });
 
@@ -95,10 +97,31 @@ app.get("/tutor_classes/:discord_username", function(req , res){
     console.log("Request Received: GET tutor classes whose status is unknown");
 });
 
-// Empty route to GET all the new course requests.
-app.get("/new_course_requests", function(req,res){
-    console.log("Request Received: GET new course requests");
-});
+// Route to GET all the new course requests.
+// url is http://localhost:8080/new_course_requests
+app.get("/new_course_requests", function(req,res) {
+    sql.connect(dbConfig, err => {
+
+        //if db.courseRequest updated then 'select last row from courseRequest T'
+
+        if (err) console.log(err);
+
+        const request = new sql.Request();
+
+        request
+            .query('select * CourseRequests where New = 1', function (err, recordset) {
+                
+                if (err) console.log(err)
+                // send records as a response
+                res.send(recordset);    
+            })
+            .query('update CourseRequests set New = 0 where New = 1', function (err, recordset) {
+                
+                console.log("New course request(s) have been updated.");
+                
+            });
+        });
+    });
 
 // Empty route to POST new tutor demands.
 app.post("/tutor_demand_creation", function(req,res){
