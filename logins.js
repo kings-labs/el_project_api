@@ -1,11 +1,12 @@
 const dbConfig = {
-    user:  "sa",
-    password: "KingsLabs@22/23#",
-    server: "198.244.247.123",
-    database: "enlightenlearning",
-    port: 1433,
+    user:  "null",
+    password: "null",
+    server: "null",
+    database: "null",
+    port: null,
     trustServerCertificate: true,
     encrypt: false
 };
 
 module.exports  = dbConfig;
+
