@@ -118,5 +118,4 @@ app.post("/rescheduling_request_creation", function(req,res){
 // Empty route to POST feedback requests.
 app.post("/feedback_creation", function(req,res){
     console.log("Request Received: POST a feedback request");
-})
-
+}) 
