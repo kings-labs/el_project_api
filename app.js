@@ -109,13 +109,13 @@ app.get("/new_course_requests", function(req,res) {
         const request = new sql.Request();
 
         request
-            .query('select * CourseRequests where New = 1', function (err, recordset) {
+            .query('select * CourseRequests where status = unkown', function (err, recordset) {
                 
                 if (err) console.log(err)
                 // send records as a response
                 res.send(recordset);    
             })
-            .query('update CourseRequests set New = 0 where New = 1', function (err, recordset) {
+            .query('update CourseRequests set status = pending where status = unkown', function (err, recordset) {
                 
                 console.log("New course request(s) have been updated.");
                 
