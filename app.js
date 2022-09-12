@@ -42,7 +42,7 @@ app.post("/cancellation_request", function(req,res){
         // Running the function to get the number of classes with a given ID and passing it a logical test as a callback.
         classesQueries.getNumberOfClassesWithId(sql,res,classID, (result) => {
             // The callback.
-            if (result){
+            if (result != null){
                 // Check if there exists one (and therefore only one because of ID unicity) class with the ID specified in the request.
                 if (result === 1) {
                     // The class specified in the request exists, so we create the actual cancellation request with the reason provided as parameter.
