@@ -16,11 +16,10 @@ module.exports = {
      * @param {*} callback The callback function to be called if the test is successful.
      */
     checkIfClassExistsWithID: function(sql,res,classID, callback) {
-        console.log("checking the nb of classes")
         const request = new sql.Request();
         request
         .input('classId', sql.Int, classID)
-        .query("SELECT COUNT(*) FROM CLASSES WHERE ID=@classId", function(err, recordset) {
+        .query("SELECT COUNT(ID) FROM CLASSES WHERE ID=@classId", function(err, recordset) {
             if (err) {
                 console.log(err);
                 res.status(400).json({error:err});

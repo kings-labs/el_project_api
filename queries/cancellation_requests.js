@@ -46,13 +46,12 @@ module.exports = {
         const request = new sql.Request();
         request
         .input('classId', sql.Int, classID)
-        .query("SELECT COUNT(*) FROM CancellationRequests WHERE ClassID=@classId AND Status IS NULL", function (err, recordset) {
+        .query("SELECT COUNT(ID) FROM CancellationRequests WHERE ClassID=@classId AND Status IS NULL", function (err, recordset) {
             if (err) {
                 console.log(err);
                 res.status(400).json({error:err});
                 return null;
             } else {
-                console.log(Object.values(recordset.recordset[0])[0])
                 if (Object.values(recordset.recordset[0])[0] === 0) {
                     callback()
                 } else {
