@@ -45,22 +45,11 @@ app.post("/cancellation_request", function(req,res){
             res.status(400).json({error:"The classID can not be null."})
         }
 
-        // Running the function to get the number of classes with a given ID and passing it a logical test as a callback.
-        classesQueries.getNumberOfClassesWithId(sql,res,classID, (result) => {
-            // The callback.
-            if (result != null){
-                // Check if there exists one (and therefore only one because of ID unicity) class with the ID specified in the request.
-                if (result === 1) {
-                    // The class specified in the request exists, so we create the actual cancellation request with the reason provided as parameter.
-                    cancellationRequestsQueries.createCancellationRequest(sql,res,classID,reason);
-                }else {
-                    console.log("Class does not exist or similar issue.");
-                    res.status(400).json({error:"There is not class with that ID."});
-                }
-            } else {
-                console.log("Issue retrieving result");
-                res.status(400).json({error:"The number of classes with similar ID could not be parsed."});
-            }
+        // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+        classesQueries.checkIfClassExistsWithID(sql,res,classID, () => {
+            cancellationRequestsQueries.checkIfNoPendingRequestForSameClass(sql, res, classID, () => {
+                cancellationRequestsQueries.createCancellationRequest(sql,res,classID,reason)
+            })
         });
         });
         
