@@ -40,9 +40,11 @@ app.post("/cancellation_request", function(req,res){
         const reason = req.body.reason;
         if (reason === null) {
             res.status(400).json({error:"The reason can not be null."})
+            return;
         }
         if (classID === null) {
             res.status(400).json({error:"The classID can not be null."})
+            return;
         }
 
         // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
