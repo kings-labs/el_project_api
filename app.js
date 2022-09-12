@@ -38,6 +38,12 @@ app.post("/cancellation_request", function(req,res){
         
         const classID = req.body.class_ID;
         const reason = req.body.reason;
+        if (reason === null) {
+            res.status(400).json({error:"The reason can not be null."})
+        }
+        if (classID === null) {
+            res.status(400).json({error:"The classID can not be null."})
+        }
 
         // Running the function to get the number of classes with a given ID and passing it a logical test as a callback.
         classesQueries.getNumberOfClassesWithId(sql,res,classID, (result) => {
