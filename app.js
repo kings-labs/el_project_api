@@ -89,7 +89,19 @@ app.get("/course_requests_number", function(req , res){
 
 // Empty route to GET all the classes assigned to a tutor based on his/her Discord username.
 app.get("/tutor_classes/:discord_username", function(req , res){
-    console.log("Request Received: GET tutor classes whose status is unknown");
+    sql.connect(dbConfig, function (err) {   
+        if (err) console.log(err);
+        
+        const discordUsername = req.params.discord_username;
+
+        if (discordUsername === null) {
+            res.status(400).json({"error":"Discord username can not be null"});
+            return;
+        }
+
+        classesQueries.getTutorClasses(sql,res,discordUsername);
+
+    });
 });
 
 // Empty route to GET all the new course requests.
@@ -187,4 +199,52 @@ app.get('/students/:studentid', function (req, res) {
                 
             });
         });
+    });
+
+    app.get("/tutors_test", function(req, res) {
+        sql.connect(dbConfig, function (err) {   
+    
+            if (err) console.log(err);
+    
+            const request = new sql.Request();
+        
+            request.query('select * from TUTORS', function(err, recordset) {
+                if (err) console.log(err)
+                // send records as a response
+                res.send(recordset);
+                
+            })
+        }); 
+    });
+
+    app.get("/courses_test", function(req, res) {
+        sql.connect(dbConfig, function (err) {   
+    
+            if (err) console.log(err);
+    
+            const request = new sql.Request();
+        
+            request.query('select * from COURSES', function(err, recordset) {
+                if (err) console.log(err)
+                // send records as a response
+                res.send(recordset);
+                
+            })
+        }); 
+    });
+
+    app.get("/classes_test", function(req, res) {
+        sql.connect(dbConfig, function (err) {   
+    
+            if (err) console.log(err);
+    
+            const request = new sql.Request();
+        
+            request.query('select * from Classes', function(err, recordset) {
+                if (err) console.log(err)
+                // send records as a response
+                res.send(recordset);
+                
+            })
+        }); 
     });

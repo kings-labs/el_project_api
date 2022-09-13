@@ -33,5 +33,17 @@ module.exports = {
                 }
             }
         });
+    },
+
+    getTutorClasses: function(sql, res, tutorDiscordId) {
+        const request = new sql.Request();
+        request
+        .input('discordUsername', sql.NVarChar, tutorDiscordId)
+        .query("SELECT * FROM CLASSES INNER JOIN COURSES on CLASSES.CourseID = COURSES.ID WHERE COURSES.TutorID = (SELECT ID FROM TUTORS WHERE DiscordUserName=@discordUsername)", function(err, recordset) {
+            if (err) console.log(err);
+
+            const classes = recordset.recordset;
+            
+        })
     }
 }
