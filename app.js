@@ -8,6 +8,8 @@ const app = express();
 const classesQueries = require("./queries/classes");
 // the cancellationRequestsQueries will hold all the functions handling SQL requests to the CancellationRequests table.
 const cancellationRequestsQueries = require("./queries/cancellation_requests");
+// the classesQueries will hold all the functions handling SQL requests to the Classes table.
+const courseRequestQueries = require("./queries/course_requests");
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins")
@@ -21,6 +23,23 @@ const server = app.listen(process.env.PORT || 8080, function () {
     const port = server.address().port;
     console.log("App now running on port", port);
 });
+
+/**
+ * Gets all new course requests and updates them to pending status.
+ * Link: http://localhost:8080/new_course_requests
+ */
+app.get("/new_course_requests", function (req, res) {
+    
+    sql.connect(dbConfig, function (err) {
+        if (err) console.log(err);
+
+        courseRequestQueries.getNewCourseRequests(sql, res);
+
+        //courseRequestQueries.updateCourseRequests(sql);
+
+    });
+});
+
 
 /**
  * Creates a new Cancellation Request.
@@ -189,29 +208,3 @@ app.get('/students/:studentid/:studentname', function (req, res) {
 
     });
 });
-
-// Route to GET all the new course requests.
-// url is http://localhost:8080/new_course_requests
-app.get("/new_course_requests", function (req, res) {
-    sql.connect(dbConfig, err => {
-
-        //if db.courseRequest updated then 'select last row from courseRequest T'
-
-        if (err) console.log(err);
-
-        const request = new sql.Request();
-
-        request
-            .query('select * from CourseRequests where status = 0', function (err, recordset) {
-
-                if (err) console.log(err)
-                // send records as a response
-                res.send(recordset);
-            })
-            .query('update CourseRequests set status = 1 where status = 0', function (err, recordset) {
-                if (err) console.log(err)
-                console.log("New course request(s) have been updated.");
-            });
-    });
-});
-
