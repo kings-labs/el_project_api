@@ -202,14 +202,14 @@ app.get("/new_course_requests", function (req, res) {
         const request = new sql.Request();
 
         request
-            .query('select * CourseRequests where status = 0', function (err, recordset) {
+            .query('select * from CourseRequests where status = 0', function (err, recordset) {
 
                 if (err) console.log(err)
                 // send records as a response
                 res.send(recordset);
             })
             .query('update CourseRequests set status = 1 where status = 0', function (err, recordset) {
-
+                if (err) console.log(err)
                 console.log("New course request(s) have been updated.");
             });
     });
