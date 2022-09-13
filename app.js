@@ -92,11 +92,14 @@ app.get("/cancellation_request_test", function (req, res) {
   });
 });
 
-// Empty route to GET the number of course requests.
+/**
+ * Get the total number of course requests in the database.
+ *
+ * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ */
 app.get("/course_requests_number", function (req, res) {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
-
     courseRequestsQueries.getNumberOfCourseRequests(sql, res);
   });
 });
