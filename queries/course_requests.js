@@ -25,8 +25,7 @@ module.exports = {
                     });
                     return null;
                 } else {
-                    // Send recordset (array) with all course requests as js objects
-                    res.send(recordset.recordset);
+                    res.status(200).json({"result":recordset.recordset});
                 }
             });
     },

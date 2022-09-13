@@ -35,7 +35,7 @@ app.get("/new_course_requests", function (req, res) {
 
         courseRequestQueries.getNewCourseRequests(sql, res);
 
-        //courseRequestQueries.updateCourseRequests(sql);
+        courseRequestQueries.updateCourseRequests(sql);
 
     });
 });
