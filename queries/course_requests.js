@@ -23,7 +23,6 @@ module.exports = {
                     res.status(400).json({
                         error: err
                     });
-                    return null;
                 } else {
                     res.status(200).json({"result":recordset.recordset});
                 }
@@ -46,9 +45,8 @@ module.exports = {
                     res.status(400).json({
                         error: err
                     });
-                    return null;
                 } else {
-                    console.log("New course request(s) have been updated.");
+                    res.status(200).json({"message":"New course request(s) have been updated."});
                 }
             });
     }
