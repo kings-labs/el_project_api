@@ -1,8 +1,8 @@
 const dbConfig = {
-    user:  "",
-    password: "",
-    server: "",
-    database: "",
+    user:  "username",
+    password: "pwd",
+    server: "IP",
+    database: "dbName",
     port: 1433,
     trustServerCertificate: true,
     encrypt: false
