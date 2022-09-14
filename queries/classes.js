@@ -63,7 +63,7 @@ module.exports = {
     request
       .input("discordUsername", sql.NVarChar, tutorDiscordId)
       .query(
-        "SELECT LEVELS.Name, COURSES.Level, CLASSES.Date, COURSES.Subject, STUDENTS.FirstName, STUDENTS.LastName, CLASSES.ID FROM CLASSES INNER JOIN COURSES on CLASSES.CourseID = COURSES.ID INNER JOIN STUDENTS on STUDENTS.ID = COURSES.StudentID INNER JOIN LEVELS on COURSES.LevelID = LEVELS.ID WHERE COURSES.TutorID = (SELECT ID FROM TUTORS WHERE DiscordID=@discordUsername)",
+        "SELECT LEVELS.Name as Level, CLASSES.Date, COURSES.Subject, STUDENTS.FirstName, STUDENTS.LastName, CLASSES.ID FROM CLASSES INNER JOIN COURSES on CLASSES.CourseID = COURSES.ID INNER JOIN STUDENTS on STUDENTS.ID = COURSES.StudentID INNER JOIN LEVELS on COURSES.LevelID = LEVELS.ID WHERE COURSES.TutorID = (SELECT ID FROM TUTORS WHERE DiscordID=@discordUsername)",
         function (err, recordset) {
           if (err) console.log(err);
 
