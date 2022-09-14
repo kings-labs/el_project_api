@@ -54,6 +54,7 @@ module.exports = {
           const classes = recordset.recordset;
           const returnValues = [];
           for (const aClass of classes) {
+            console.log("date: " + aClass.Date);
             if (helperFunctions.isLessThanTenDaysAgo(aClass.Date)) {
               const returnValueForClass = {
                 name: aClass.Level + " " + aClass.Subject,

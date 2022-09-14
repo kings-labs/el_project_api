@@ -6,9 +6,10 @@ module.exports = {
    */
   isLessThanTenDaysAgo: function (date) {
     // Split the date parameter into day, month and year
-    const passedDay = date.split("/")[0];
-    const passedMonth = date.split("/")[1];
-    const passedYear = date.split("/")[2];
+    const splittedDate = date.split("/");
+    const passedDay = splittedDate[1];
+    const passedMonth = splittedDate[0];
+    const passedYear = splittedDate[2];
     // Split today's date into day, month and year
     const today = new Date();
     const currentDay = today.getDate();
