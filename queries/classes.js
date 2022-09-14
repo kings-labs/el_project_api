@@ -9,6 +9,7 @@ module.exports = {
    * Checks if a class with a given ID actually exists.
    *
    * If the test is successful, the callback function will be called.
+   * If not, a specific status of 412 is returned for the bot to be able to understand the mistake.
    *
    * @param {*} sql The mssql instance connected to the database currently used by the API.
    * @param {*} res The object to send result to a given query sender.
