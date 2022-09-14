@@ -9,6 +9,7 @@ const classesQueries = require("./queries/classes");
 // the cancellationRequestsQueries will hold all the functions handling SQL requests to the CancellationRequests table.
 const cancellationRequestsQueries = require("./queries/cancellation_requests");
 const courseRequestsQueries = require("./queries/course_requests");
+const reschedulingRequestsQueries = require("./queries/rescheduling_requests");
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
@@ -126,6 +127,8 @@ app.post("/rescheduling_request", function (req, res) {
 
     const classID = req.body.class_ID;
     const reason = req.body.reason;
+    const newDate = req.body.newDate;
+
     if (reason === null) {
       res.status(400).json({ error: "The reason can not be null." });
       return;
@@ -137,12 +140,12 @@ app.post("/rescheduling_request", function (req, res) {
 
     // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
     classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-      cancellationRequestsQueries.checkIfNoPendingRequestForSameClass(
+      reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
         sql,
         res,
         classID,
         () => {
-          reschedullingRequestsQueries.createReschedullingRequest(
+          reschedulingRequestsQueries.createReschedulingRequest(
             sql,
             res,
             classID,
