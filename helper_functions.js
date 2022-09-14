@@ -70,6 +70,6 @@ module.exports = {
       currentMonth,
       currentYear
     );
-    return difference <= 10 && difference >= 0;
+    return difference <= 10;
   },
 };
