@@ -1,3 +1,11 @@
+/**
+ * This is the main file of the application that routes and connections to the database.
+ * Note about the status returned by the various routes:
+ * 200: general success
+ * 400: general failure
+ * 412: failure because the classID passed to the request does not exist
+ * 406: failure because the class a request was made for already received a request of the same type (Cancel, Rescheduling or Feedback)
+ */
 const express = require("express");
 const bodyParser = require("body-parser");
 const sql = require("mssql");
@@ -32,6 +40,8 @@ const server = app.listen(process.env.PORT || 8080, function () {
  * reason: the reason of the cancellation as indicated by the tutor
  *
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ * If the class already received a feedback request, it will give out a status of 406.
+ * If the class does not exist it will give out a status of 412.
  */
 app.post("/cancellation_request", function (req, res) {
   // Connecting to the database.
@@ -130,9 +140,11 @@ app.post("/rescheduling_request", function (req, res) {
  *
  * The POST request to this endpoint should hold 2 parameters:
  * class_ID: the ID of the class that is requested to be cancelled
- * feedbacj: the feedback note the tutor wants to leave
+ * feedback: the feedback note the tutor wants to leave
  *
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ * If the class already received a feedback request, it will give out a status of 406.
+ * If the class does not exist it will give out a status of 412.
  */
 app.post("/feedback_creation", function (req, res) {
   // Connecting to the database.
