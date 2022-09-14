@@ -8,6 +8,7 @@ const app = express();
 const classesQueries = require("./queries/classes");
 // the cancellationRequestsQueries will hold all the functions handling SQL requests to the CancellationRequests table.
 const cancellationRequestsQueries = require("./queries/cancellation_requests");
+const courseRequestsQueries = require("./queries/course_requests");
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
@@ -67,43 +68,12 @@ app.post("/cancellation_request", function (req, res) {
 });
 
 /**
- * TEST (This is a test route that needs to be removed before merging ticket T15 in)
- *
- * It will return all the CancellationRequests records in the databse so you can check the CancellationRequests are created properly by the previous endpoint.
- */
-app.get("/cancellation_request_test", function (req, res) {
-  // connect to your database
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
-
-    // create Request object
-    const request = new sql.Request();
-
-    // query to the database and get the records
-    request.query(
-      "select * from CancellationRequests",
-      function (err, recordset) {
-        if (err) console.log(err);
-        // send records as a response
-        res.send(recordset);
-      }
-    );
-  });
-});
-
-/**
  * Gets all the classes assigned to a tutor that happened less than 10 days ago or that will happen in the future.
  *
  * The GET request to this endpoint should hold 1 parameter: the tutor's discord ID
  *
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
-app.get("/course_requests_number", function (req, res) {
-  console.log("Request Received: GET number of course requests");
-  res.send("Course Request Number");
-});
-
-// Empty route to GET all the classes assigned to a tutor based on his/her Discord username.
 app.get("/tutor_classes/:discord_username", function (req, res) {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
@@ -116,6 +86,18 @@ app.get("/tutor_classes/:discord_username", function (req, res) {
     }
 
     classesQueries.getTutorClasses(sql, res, discordUsername);
+  });
+});
+
+/**
+ * Get the total number of course requests in the database.
+ *
+ * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ */
+app.get("/course_requests_number", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+    courseRequestsQueries.getNumberOfCourseRequests(sql, res);
   });
 });
 
