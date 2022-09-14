@@ -42,12 +42,28 @@ module.exports = {
       );
   },
 
+  /**
+   * Sends all the classes of a specific tutor that happened less than 10 days go or that will happen in the future.
+   * The data is cleaned up to follow the following structure:
+   * {
+   *  name: <course level + course subject>
+   *  student: <student first name + student last name>
+   *  date: <class date>
+   *  id: <class id>
+   * }
+   *
+   * A successful request gives status 200 while an unsuccessful one gives status 400.
+   *
+   * @param {*} sql The mssql instance connected to the database currently used by the API.
+   * @param {*} res The object to send result to a given query sender.
+   * @param {*} tutorDiscordId The tutor's discord id.
+   */
   getTutorClasses: function (sql, res, tutorDiscordId) {
     const request = new sql.Request();
     request
       .input("discordUsername", sql.NVarChar, tutorDiscordId)
       .query(
-        "SELECT COURSES.Level, CLASSES.Date, COURSES.Subject, STUDENTS.FirstName, STUDENTS.LastName, CLASSES.ID FROM CLASSES INNER JOIN COURSES on CLASSES.CourseID = COURSES.ID INNER JOIN STUDENTS on STUDENTS.ID = COURSES.StudentID WHERE COURSES.TutorID = (SELECT ID FROM TUTORS WHERE DiscordUserName=@discordUsername)",
+        "SELECT COURSES.Level, CLASSES.Date, COURSES.Subject, STUDENTS.FirstName, STUDENTS.LastName, CLASSES.ID FROM CLASSES INNER JOIN COURSES on CLASSES.CourseID = COURSES.ID INNER JOIN STUDENTS on STUDENTS.ID = COURSES.StudentID WHERE COURSES.TutorID = (SELECT ID FROM TUTORS WHERE DiscordID=@discordUsername)",
         function (err, recordset) {
           if (err) console.log(err);
 
