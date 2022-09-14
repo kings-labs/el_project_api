@@ -1,3 +1,8 @@
+/**
+ * This file holds the code of all queries related to the CourseRequests table.
+ *
+ * @version 13/09/2022
+ */
 module.exports = {
   /**
    * Get the total number of course requests in the database.
