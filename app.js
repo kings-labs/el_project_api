@@ -121,7 +121,38 @@ app.post("/tutor_demand", function (req, res) {
 
 // Empty route to POST reschedulling requests.
 app.post("/rescheduling_request", function (req, res) {
-  console.log("Request Received: POST a reschedulling request");
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const classID = req.body.class_ID;
+    const reason = req.body.reason;
+    if (reason === null) {
+      res.status(400).json({ error: "The reason can not be null." });
+      return;
+    }
+    if (classID === null) {
+      res.status(400).json({ error: "The classID can not be null." });
+      return;
+    }
+
+    // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+    classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+      cancellationRequestsQueries.checkIfNoPendingRequestForSameClass(
+        sql,
+        res,
+        classID,
+        () => {
+          reschedullingRequestsQueries.createReschedullingRequest(
+            sql,
+            res,
+            classID,
+            reason,
+            newDate
+          );
+        }
+      );
+    });
+  });
 });
 
 // Empty route to POST feedback requests.
