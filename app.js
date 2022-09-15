@@ -139,7 +139,7 @@ app.post("/rescheduling_request", function (req, res) {
  * Creates a new Feedback record.
  *
  * The POST request to this endpoint should hold 2 parameters:
- * class_ID: the ID of the class that is requested to be cancelled
+ * class_ID: the ID of the class for which a feedback should be created
  * feedback: the feedback note the tutor wants to leave
  *
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
