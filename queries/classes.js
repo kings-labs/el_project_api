@@ -11,6 +11,10 @@ module.exports = {
    * Checks if a class with a given ID actually exists.
    *
    * If the test is successful, the callback function will be called.
+<<<<<<< HEAD
+=======
+   * If not, a specific status of 412 is returned for the bot to be able to understand the mistake.
+>>>>>>> 2bd1f060da6a0654bc7993265e6003277afdbc59
    *
    * @param {*} sql The mssql instance connected to the database currently used by the API.
    * @param {*} res The object to send result to a given query sender.
@@ -34,6 +38,7 @@ module.exports = {
             } else {
               console.log("Class does not exist or similar issue.");
               res
+<<<<<<< HEAD
                 .status(400)
                 .json({ error: "There is not class with that ID." });
             }
@@ -84,6 +89,12 @@ module.exports = {
           }
 
           res.send(returnValues);
+=======
+                .status(412)
+                .json({ error: "There is not class with that ID." });
+            }
+          }
+>>>>>>> 2bd1f060da6a0654bc7993265e6003277afdbc59
         }
       );
   },
