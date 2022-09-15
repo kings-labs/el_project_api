@@ -70,22 +70,22 @@ app.post("/cancellation_request", function (req, res) {
 /**
  * Gets all the classes assigned to a tutor that happened less than 10 days ago or that will happen in the future.
  *
- * The GET request to this endpoint should hold 1 parameter: the tutor's discord ID
+ * The GET request to this endpoint should hold 1 parameter: the tutor's discord ID.
  *
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
-app.get("/tutor_classes/:discord_username", function (req, res) {
+app.get("/tutor_classes/:discord_id", function (req, res) {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
 
-    const discordUsername = req.params.discord_username;
+    const discordID = req.params.discord_id;
 
-    if (discordUsername === null) {
-      res.status(400).json({ error: "Discord username can not be null" });
+    if (discordID === null) {
+      res.status(400).json({ error: "Discord id can not be null" });
       return;
     }
 
-    classesQueries.getTutorClasses(sql, res, discordUsername);
+    classesQueries.getTutorClasses(sql, res, discordID);
   });
 });
 

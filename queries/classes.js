@@ -43,7 +43,7 @@ module.exports = {
   },
 
   /**
-   * Sends all the classes of a specific tutor that happened less than 10 days go or that will happen in the future.
+   * Sends all the classes of a specific tutor that happened less than 10 days go or that will happen in the future and that have either 'Unknown' (the classes has just been created)
    * The data is cleaned up to follow the following structure:
    * {
    *  name: <course level + course subject>
@@ -63,7 +63,7 @@ module.exports = {
     request
       .input("discordUsername", sql.NVarChar, tutorDiscordId)
       .query(
-        "SELECT LEVELS.Name as Level, CLASSES.Date, COURSES.Subject, STUDENTS.FirstName, STUDENTS.LastName, CLASSES.ID FROM CLASSES INNER JOIN COURSES on CLASSES.CourseID = COURSES.ID INNER JOIN STUDENTS on STUDENTS.ID = COURSES.StudentID INNER JOIN LEVELS on COURSES.LevelID = LEVELS.ID WHERE COURSES.TutorID = (SELECT ID FROM TUTORS WHERE DiscordID=@discordUsername)",
+        "SELECT LEVELS.Name as Level, CLASSES.Date, COURSES.Subject, STUDENTS.FirstName, STUDENTS.LastName, CLASSES.ID FROM CLASSES INNER JOIN COURSES on CLASSES.CourseID = COURSES.ID INNER JOIN STUDENTS on STUDENTS.ID = COURSES.StudentID INNER JOIN LEVELS on COURSES.LevelID = LEVELS.ID WHERE COURSES.TutorID = (SELECT ID FROM TUTORS WHERE DiscordID=@discordUsername) AND (CLASSES.Status = 'Empty' or CLASSES.Status = 'Rescheduled')",
         function (err, recordset) {
           if (err) console.log(err);
 
