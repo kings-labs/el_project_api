@@ -17,7 +17,7 @@ module.exports = {
         const request = new sql.Request();
 
         request
-            .query('select * from CourseRequests where status = 0', function (err, recordset) {
+            .query('SELECT Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0', function (err, recordset) {
                 if (err) {
                     console.log(err);
                     res.status(400).json({
@@ -25,6 +25,7 @@ module.exports = {
                     });
                 } else {
                     res.status(200).json({"result":recordset.recordset});
+                    updateCourseRequests(res);
                 }
             });
     },

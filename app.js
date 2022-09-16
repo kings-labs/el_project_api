@@ -33,9 +33,7 @@ app.get("/new_course_requests", function (req, res) {
     sql.connect(dbConfig, async function (err) {
         if (err) console.log(err);
 
-        courseRequestQueries.getNewCourseRequests(sql, res, () => {
-            courseRequestQueries.updateCourseRequests(sql);
-        });
+        courseRequestQueries.getNewCourseRequests(sql, res);
         
     });
 });
