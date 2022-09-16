@@ -36,8 +36,11 @@ const server = app.listen(process.env.PORT || 8080, function () {
 
 
 /**
- * Gets all new course requests and updates them to pending status.
- * Link: http://localhost:8080/new_course_requests
+ * Gets all the new course requests (with a status = 0) and updates them to pending status.
+ * 
+ * The GET request to this endpoint should hold 1 parameter: the array containing all the new course requests.
+ * 
+ * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/new_course_requests", function (req, res) {
     

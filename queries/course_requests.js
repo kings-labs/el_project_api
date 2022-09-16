@@ -9,7 +9,7 @@ const helperFunctions = require("../helper_functions.js");
 module.exports = {
 
     /**
-     * Retrieves all the new course requests (status = 0)
+     * Retrieves all the new course requests and update their status to 1 (= pending) if the retrieval is successful.
      * 
      * @param {*} sql The mssql instance connected to the database currently used by the API.
      * @param {*} res The object to send result to a given query sender.
@@ -27,30 +27,11 @@ module.exports = {
                     });
                 } else {
 
-                    res.status(200).json({ "result": helperFunctions.arrangeResult(recordset.recordset) });
-                    
-                }
-            });
-    },
-
-    /**
-     * Updates the status of the new course requests to pending (= 1).
-     * 
-     * @param {*} sql The mssql instance connected to the database currently used by the API.
-     */
-    updateCourseRequests: function (sql) {
-
-        const request = new sql.Request();
-
-        request
-            .query('update CourseRequests set status = 1 where status = 0', function (err) {
-                if (err) {
-                    console.log(err);
-                    res.status(400).json({
-                        error: err
+                    res.status(200).json({
+                        "result": helperFunctions.arrangeResult(recordset.recordset)
                     });
-                } else {
-                    res.status(200).json({"message":"New course request(s) have been updated."});
+
+                    updateCourseRequests(sql);
                 }
             });
     },
@@ -67,17 +48,45 @@ module.exports = {
         const request = new sql.Request();
 
         request.query(
-        "SELECT COUNT(ID) FROM CourseRequests WHERE Status=0",
-        function (err, recordset) {
-            if (err) {
-            res.status(400).json({ error: err });
-            }
+            "SELECT COUNT(ID) FROM CourseRequests WHERE Status=0",
+            function (err, recordset) {
+                if (err) {
+                    res.status(400).json({
+                        error: err
+                    });
+                }
 
-            res
-            .status(200)
-            .json({ number: Object.values(recordset.recordset[0])[0] });
-        }
+                res
+                    .status(200)
+                    .json({
+                        number: Object.values(recordset.recordset[0])[0]
+                    });
+            }
         );
     },
 
+}
+
+/**
+ * Updates the status of the new course requests to pending (= 1).
+ * 
+ * @param {*} sql The mssql instance connected to the database currently used by the API.
+ */
+function updateCourseRequests(sql) {
+
+    const request = new sql.Request();
+
+    request
+        .query('update CourseRequests set status = 1 where status = 0', function (err) {
+            if (err) {
+                console.log(err);
+                res.status(400).json({
+                    error: err
+                });
+            } else {
+                res.status(200).json({
+                    "message": "New course request(s) have been updated."
+                });
+            }
+        });
 }
