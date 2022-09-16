@@ -46,7 +46,7 @@ module.exports = {
   /**
    * Sends all the classes of a specific tutor that happened less than 10 days go
    * or that will happen in the future and that have either 'Empty' (the classes has just been created)
-   * or "Postponed" (the classes that result from a past rescheduling).
+   * or "Rescheduled" (the classes that result from a past rescheduling).
    * The data is cleaned up to follow the following structure:
    * {
    *  name: <course level + course subject>
