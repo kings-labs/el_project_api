@@ -44,7 +44,7 @@ app.get("/new_course_requests", function (req, res) {
     sql.connect(dbConfig, async function (err) {
         if (err) console.log(err);
 
-        courseRequestQueries.getNewCourseRequests(sql, res);
+        courseRequestsQueries.getNewCourseRequests(sql, res);
         
     });
 });

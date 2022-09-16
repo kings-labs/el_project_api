@@ -3,6 +3,9 @@
  * 
  * @version 13/09/2022
  */
+
+const helperFunctions = require("../helper_functions.js");
+
 module.exports = {
 
     /**
@@ -23,8 +26,9 @@ module.exports = {
                         error: err
                     });
                 } else {
-                    res.status(200).json({"result":recordset.recordset});
-                    updateCourseRequests(res);
+
+                    res.status(200).json({ "result": helperFunctions.arrangeResult(recordset.recordset) });
+                    
                 }
             });
     },

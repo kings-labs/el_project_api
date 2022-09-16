@@ -72,4 +72,57 @@ module.exports = {
     );
     return difference <= 10;
   },
+  /**
+   * The method allows to get a well formatted result for the new course request route.
+   * Each course request record now has a property dateOptions that gathers all the date options in a list. 
+   * @param {*} result This is the list of all the new course requests.
+   * @returns The arranged list of all the new course requests having a property date options.
+   */
+  arrangeResult: function (result) {
+    
+    let listOfSubjects = [];
+    let resultWanted = [];
+
+    for (const newCourseRequest of result) {
+      if (!listOfSubjects.includes(newCourseRequest.Subject)) {
+        listOfSubjects.push(newCourseRequest.Subject)
+      }
+    }
+
+    for (const subject of listOfSubjects) {
+      let informationToRetrieve = {
+        "Subject": undefined,
+        "Frequency": undefined,
+        "LevelName": undefined,
+        "Money": undefined,
+        "Duration": undefined,
+        "DateOptions": undefined
+      };
+
+      let courseRequestsOfSameSubject = [];
+      for (courseRequest of result) {
+        if (courseRequest.Subject == subject) {
+          courseRequestsOfSameSubject.push(courseRequest);
+          informationToRetrieve.Subject = courseRequest.Subject;
+          informationToRetrieve.Frequency = courseRequest.Frequency;
+          informationToRetrieve.LevelName = courseRequest.LevelName;
+          informationToRetrieve.Money = courseRequest.Money;
+          informationToRetrieve.Duration = courseRequest.Duration;
+        }
+      }
+
+      let dateOptionsForCourseRequestOfSameSubject = [];
+      for (courseRequest of courseRequestsOfSameSubject) {
+        dateOptionsForCourseRequestOfSameSubject.push(courseRequest.Day + " " + courseRequest.Time);
+      }
+
+      informationToRetrieve.DateOptions = dateOptionsForCourseRequestOfSameSubject
+
+      resultWanted.push(informationToRetrieve);
+    }
+
+    return resultWanted;
+
+  },
+
 };
