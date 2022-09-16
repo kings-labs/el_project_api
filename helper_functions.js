@@ -66,14 +66,12 @@ module.exports = {
   },
 
   /**
-   * By default, javascript makes week start on the Sunday we want them to start on the Saturday to give our tutors
-   * all their weekens to manage the week's classes. This function handles that rebase.
-   *
-   * @param {*} dayNumber the day extracted from a javascript Date object.
+   * @param {*} date the date under MM/DD/YYY format.
    * @returns the week day it corresponds to.
    */
-  getWeekDayFromDayNumberWithWeekStartsSaturday: function (dayNumber) {
-    const rebasedWeekNumber = (dayNumber + 1) % 7;
+  getWeekDayFromDate: function (dateString) {
+    const [month, day, year] = dateString.split("/");
+    const date = new Date(+year, month - 1, +day);
     const weekdays = [
       "Sunday",
       "Monday",
@@ -84,7 +82,7 @@ module.exports = {
       "Saturday",
     ];
 
-    return weekdays[rebasedWeekNumber];
+    return weekdays[date.getDay()];
   },
 };
 

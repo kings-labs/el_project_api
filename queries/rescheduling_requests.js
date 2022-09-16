@@ -1,4 +1,5 @@
 const helperFunctions = require("../helper_functions");
+const timeReferenceQueries = require("../queries/time_reference_queries");
 
 module.exports = {
   /**
@@ -15,18 +16,19 @@ module.exports = {
   createReschedulingRequest: function (sql, res, classID, reason, newDate) {
     const request = new sql.Request();
 
-    const [day, month, year] = newDate.split("/");
-    const date = new Date(+year, month - 1, +day);
-    const newDay =
-      helperFunctions.getWeekDayFromDayNumberWithWeekStartsSaturday(
-        date.getDay()
-      );
-    const newWeek = helperFunctions.getWeekNumberForDate(newDate);
+    const lastRecordedWeek = timeReferenceQueries.getCurrentWeekDetails(sql);
+
+    const newDay = helperFunctions.getWeekDayFromDate(newDate);
+    const newWeek = helperFunctions.getWeekNumberForDate(
+      newDate,
+      lastRecordedWeek.WeekStartDate,
+      lastRecordedWeek.WeekNumber
+    );
     request
       .input("classId", sql.Int, classID)
       .input("reason", sql.NVarChar, reason)
       .input("newDay", sql.NVarChar, newDay)
-      .input("newWeek", sql.NVarChar, newWeek)
+      .input("newWeek", sql.Int, newWeek)
       .input("newDate", sql.NVarChar, newDate)
       .query(
         "insert into ReschedulingRequests (ClassID,Reason,NewDay,NewWeek,Date,Status) values (@classId,@reason,@newDay,@newWeek,@newDate,null)",
@@ -35,7 +37,7 @@ module.exports = {
             console.log(err);
             res.status(400).json({ error: err });
           } else {
-            res.status(200).json({ message: "Cancellation request created." });
+            res.status(200).json({ message: "Rescheduling request created." });
           }
         }
       );

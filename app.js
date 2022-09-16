@@ -365,3 +365,20 @@ app.get("/tutors_test", function (req, res) {
     });
   });
 });
+
+app.get("/reschedule_test", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query(
+      "select * from reschedulingrequests",
+      function (err, recordset) {
+        if (err) console.log(err);
+        // send records as a response
+        res.send(recordset);
+      }
+    );
+  });
+});
