@@ -55,7 +55,7 @@ module.exports = {
                 if (Object.values(recordset.recordset[0])[0] === 0) {
                     callback()
                 } else {
-                    res.status(400).json({error:"A request is currently opened for the same class."});
+                    res.status(406).json({error:"A request is currently opened for the same class."});
                 }
             }
         });
