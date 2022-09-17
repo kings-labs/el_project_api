@@ -341,3 +341,21 @@ app.get("/tutors_test", function (req, res) {
     });
   });
 });
+
+// http://localhost:8080/change_course_requests_status_to_new
+app.get("/change_course_requests_status_to_new", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("update CourseRequests set status = 0 where status = 1", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.status(200).json({
+        "message": "New course request(s) have been updated."
+      });
+      
+    });
+  });
+});

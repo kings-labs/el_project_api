@@ -28,7 +28,7 @@ module.exports = {
                 } else {
 
                     res.status(200).json({
-                        "result": helperFunctions.arrangeResult(recordset.recordset)
+                        "result": formatResult(recordset.recordset),
                     });
 
                     updateCourseRequests(sql);
@@ -80,13 +80,62 @@ function updateCourseRequests(sql) {
         .query('update CourseRequests set status = 1 where status = 0', function (err) {
             if (err) {
                 console.log(err);
-                res.status(400).json({
-                    error: err
-                });
             } else {
-                res.status(200).json({
-                    "message": "New course request(s) have been updated."
-                });
+                console.log("New course request(s) have been updated.");
             }
         });
+}
+
+/**
+ * The method allows to get a well formatted result for the new course request route.
+ * Each course request record now has a property dateOptions that gathers all the date options in a list. 
+ * 
+ * @param {*} result This is the list of all the new course requests.
+ * @returns The arranged list of all the new course requests having a property date options.
+ */
+function formatResult(result) {
+
+    let listOfSubjects = [];
+    let resultWanted = [];
+
+    for (const newCourseRequest of result) {
+        if (!listOfSubjects.includes(newCourseRequest.Subject)) {
+            listOfSubjects.push(newCourseRequest.Subject)
+        }
+    }
+
+    for (const subject of listOfSubjects) {
+        let informationToRetrieve = {
+            "Subject": undefined,
+            "Frequency": undefined,
+            "LevelName": undefined,
+            "Money": undefined,
+            "Duration": undefined,
+            "DateOptions": undefined
+        };
+
+        let courseRequestsOfSameSubject = [];
+        for (courseRequest of result) {
+            if (courseRequest.Subject == subject) {
+                courseRequestsOfSameSubject.push(courseRequest);
+                informationToRetrieve.Subject = courseRequest.Subject;
+                informationToRetrieve.Frequency = courseRequest.Frequency;
+                informationToRetrieve.LevelName = courseRequest.LevelName;
+                informationToRetrieve.Money = courseRequest.Money;
+                informationToRetrieve.Duration = courseRequest.Duration;
+            }
+        }
+
+        let dateOptionsForCourseRequestOfSameSubject = [];
+        for (courseRequest of courseRequestsOfSameSubject) {
+            dateOptionsForCourseRequestOfSameSubject.push(courseRequest.Day + " " + courseRequest.Time);
+        }
+
+        informationToRetrieve.DateOptions = dateOptionsForCourseRequestOfSameSubject
+
+        resultWanted.push(informationToRetrieve);
+    }
+
+    return resultWanted;
+
 }
