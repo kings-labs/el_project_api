@@ -133,11 +133,6 @@ app.get("/course_requests_number", function (req, res) {
   });
 });
 
-// Empty route to GET all the new course requests.
-app.get("/new_course_requests", function (req, res) {
-  console.log("Request Received: GET new course requests");
-});
-
 // Empty route to POST new tutor demands.
 app.post("/tutor_demand", function (req, res) {
   console.log("Request Received: POST a tutor demand request");
