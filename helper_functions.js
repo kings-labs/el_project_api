@@ -84,6 +84,72 @@ module.exports = {
 
     return weekdays[date.getDay()];
   },
+
+  /**
+   * Checks if date is in the MM/DD/YYYY format.
+   *
+   * @param {*} date the date to test.
+   * @returns if it's in the specified format.
+   */
+  isValidDateFormat: function (date) {
+    if (!date.includes("/")) {
+      return false;
+    }
+    const splittedDate = date.split("/");
+    if (!splittedDate.length === 3) {
+      return false;
+    } else {
+      const numericalDay = parseInt(splittedDate[1]);
+      const numericalMonth = parseInt(splittedDate[0]);
+      if (
+        splittedDate[0].length == 2 &&
+        splittedDate[1].length == 2 &&
+        splittedDate[2].length == 4 &&
+        numericalDay < 32 &&
+        numericalMonth < 13
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  },
+
+  /**
+   * Checks if date is in the future.
+   *
+   * @param {*} date the date to test.
+   * @returns if it's in the future.
+   */
+  isInTheFuture: function (date) {
+    const today = new Date();
+    const todayDay = today.getDate();
+    const todayMonth = today.getMonth() + 1; // +1 because the format is 0-11
+    const todayYear = today.getFullYear();
+
+    const splittedDate = date.split("/");
+    const toTestDay = Number(splittedDate[1]);
+    const toTestMonth = Number(splittedDate[0]);
+    const toTestYear = Number(splittedDate[2]);
+
+    if (toTestYear < todayYear) {
+      return false;
+    } else if (toTestYear > todayYear) {
+      return true;
+    } else {
+      if (toTestMonth < todayMonth) {
+        return false;
+      } else if (toTestMonth > toTestMonth) {
+        return true;
+      } else {
+        if (toTestDay > todayDay) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+  },
 };
 
 /**

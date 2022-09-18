@@ -22,6 +22,7 @@ const feedbacksQueries = require("./queries/feedbacks");
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
+const helper_functions = require("./helper_functions");
 
 // Body Parser Middleware
 app.use(bodyParser.json());
@@ -151,24 +152,36 @@ app.post("/rescheduling_request", function (req, res) {
       res.status(400).json({ error: "The classID can not be null." });
       return;
     }
+    if (newDate === null) {
+      res.status(400).json({ error: "The newDate can not be null." });
+      return;
+    }
 
-    // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-    classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-      reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
-        sql,
-        res,
-        classID,
-        () => {
-          reschedulingRequestsQueries.createReschedulingRequest(
+    if (helper_functions.isValidDateFormat(newDate)) {
+      if (helper_functions.isInTheFuture(newDate)) {
+        // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+        classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+          reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
             sql,
             res,
             classID,
-            reason,
-            newDate
+            () => {
+              reschedulingRequestsQueries.createReschedulingRequest(
+                sql,
+                res,
+                classID,
+                reason,
+                newDate
+              );
+            }
           );
-        }
-      );
-    });
+        });
+      } else {
+        res.status(402).json({ error: "NewDate is not in the future." });
+      }
+    } else {
+      res.status(408).json({ error: "Unvalid date format." });
+    }
   });
 });
 
