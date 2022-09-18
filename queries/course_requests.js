@@ -19,7 +19,7 @@ module.exports = {
         const request = new sql.Request();
 
         request
-            .query('SELECT Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0', function (err, recordset) {
+            .query('SELECT CourseRequests.ID, Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0', function (err, recordset) {
                 if (err) {
                     console.log(err);
                     res.status(400).json({
@@ -100,12 +100,13 @@ function formatResult(result) {
 
     for (const newCourseRequest of result) {
         if (!listOfSubjects.includes(newCourseRequest.Subject)) {
-            listOfSubjects.push(newCourseRequest.Subject)
+            listOfSubjects.push(newCourseRequest.Subject);
         }
     }
 
     for (const subject of listOfSubjects) {
         let informationToRetrieve = {
+            "ID": undefined,
             "Subject": undefined,
             "Frequency": undefined,
             "LevelName": undefined,
@@ -118,6 +119,7 @@ function formatResult(result) {
         for (courseRequest of result) {
             if (courseRequest.Subject == subject) {
                 courseRequestsOfSameSubject.push(courseRequest);
+                informationToRetrieve.ID = courseRequest.ID;
                 informationToRetrieve.Subject = courseRequest.Subject;
                 informationToRetrieve.Frequency = courseRequest.Frequency;
                 informationToRetrieve.LevelName = courseRequest.LevelName;
