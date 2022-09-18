@@ -101,17 +101,13 @@ module.exports = {
     } else {
       const numericalDay = parseInt(splittedDate[1]);
       const numericalMonth = parseInt(splittedDate[0]);
-      if (
+      return (
         splittedDate[0].length == 2 &&
         splittedDate[1].length == 2 &&
         splittedDate[2].length == 4 &&
         numericalDay < 32 &&
         numericalMonth < 13
-      ) {
-        return true;
-      } else {
-        return false;
-      }
+      );
     }
   },
 
@@ -142,11 +138,7 @@ module.exports = {
       } else if (toTestMonth > toTestMonth) {
         return true;
       } else {
-        if (toTestDay > todayDay) {
-          return true;
-        } else {
-          return false;
-        }
+        return toTestDay > todayDay;
       }
     }
   },
