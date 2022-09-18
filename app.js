@@ -17,10 +17,12 @@ const classesQueries = require("./queries/classes");
 // the cancellationRequestsQueries will hold all the functions handling SQL requests to the CancellationRequests table.
 const cancellationRequestsQueries = require("./queries/cancellation_requests");
 const courseRequestsQueries = require("./queries/course_requests");
+const reschedulingRequestsQueries = require("./queries/rescheduling_requests");
 const feedbacksQueries = require("./queries/feedbacks");
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
+const helper_functions = require("./helper_functions");
 
 // Body Parser Middleware
 app.use(bodyParser.json());
@@ -122,9 +124,65 @@ app.post("/tutor_demand", function (req, res) {
   console.log("Request Received: POST a tutor demand request");
 });
 
-// Empty route to POST reschedulling requests.
+/**
+ * Creates a new Rescheduling Request.
+ *
+ * The POST request to this endpoint should hold 3 parameters:
+ * class_ID: the ID of the class that is requested to be rescheduled
+ * reason: the reason for rescheduling as indicated by the tutor
+ * new_date: the date at which the class should be rescheduled (format MM/DD/YYYY)
+ *
+ * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ * If the class already received a feedback request, it will give out a status of 406.
+ * If the class does not exist it will give out a status of 412.
+ */
 app.post("/rescheduling_request", function (req, res) {
-  console.log("Request Received: POST a reschedulling request");
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const classID = req.body.class_ID;
+    const reason = req.body.reason;
+    const newDate = req.body.new_date;
+
+    if (reason === null) {
+      res.status(400).json({ error: "The reason can not be null." });
+      return;
+    }
+    if (classID === null) {
+      res.status(400).json({ error: "The classID can not be null." });
+      return;
+    }
+    if (newDate === null) {
+      res.status(400).json({ error: "The newDate can not be null." });
+      return;
+    }
+
+    if (helper_functions.isValidDateFormat(newDate)) {
+      if (helper_functions.isInTheFuture(newDate)) {
+        // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+        classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+          reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
+            sql,
+            res,
+            classID,
+            () => {
+              reschedulingRequestsQueries.createReschedulingRequest(
+                sql,
+                res,
+                classID,
+                reason,
+                newDate
+              );
+            }
+          );
+        });
+      } else {
+        res.status(402).json({ error: "NewDate is not in the future." });
+      }
+    } else {
+      res.status(408).json({ error: "Unvalid date format." });
+    }
+  });
 });
 
 /**
@@ -318,5 +376,22 @@ app.get("/tutors_test", function (req, res) {
       // send records as a response
       res.send(recordset);
     });
+  });
+});
+
+app.get("/reschedule_test", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query(
+      "select * from reschedulingrequests",
+      function (err, recordset) {
+        if (err) console.log(err);
+        // send records as a response
+        res.send(recordset);
+      }
+    );
   });
 });
