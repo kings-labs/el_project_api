@@ -3,9 +3,6 @@
  * 
  * @version 13/09/2022
  */
-
-const helperFunctions = require("../helper_functions.js");
-
 module.exports = {
 
     /**
@@ -19,7 +16,7 @@ module.exports = {
         const request = new sql.Request();
 
         request
-            .query('SELECT CourseRequests.ID, Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0', function (err, recordset) {
+            .query('SELECT CourseRequests.ID, Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, DateOptions.ID AS DateOptionsID, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0', function (err, recordset) {
                 if (err) {
                     console.log(err);
                     res.status(400).json({
@@ -112,6 +109,7 @@ function formatResult(result) {
             "LevelName": undefined,
             "Money": undefined,
             "Duration": undefined,
+            "DateOptionsID": undefined,
             "DateOptions": undefined
         };
 
@@ -130,10 +128,10 @@ function formatResult(result) {
 
         let dateOptionsForCourseRequestOfSameSubject = [];
         for (courseRequest of courseRequestsOfSameSubject) {
-            dateOptionsForCourseRequestOfSameSubject.push(courseRequest.Day + " " + courseRequest.Time);
+            dateOptionsForCourseRequestOfSameSubject.push({ID: courseRequest.DateOptionsID, String: courseRequest.Day + " " + courseRequest.Time});
         }
 
-        informationToRetrieve.DateOptions = dateOptionsForCourseRequestOfSameSubject
+        informationToRetrieve.DateOptions = dateOptionsForCourseRequestOfSameSubject;
 
         resultWanted.push(informationToRetrieve);
     }
