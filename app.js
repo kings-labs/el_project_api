@@ -19,10 +19,13 @@ const cancellationRequestsQueries = require("./queries/cancellation_requests");
 const courseRequestsQueries = require("./queries/course_requests");
 const reschedulingRequestsQueries = require("./queries/rescheduling_requests");
 const feedbacksQueries = require("./queries/feedbacks");
+const coursesQueries = require("./queries/courses");
+const timeReferenceQueries = require("./queries/time_reference_queries");
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
 const helper_functions = require("./helper_functions");
+const course_requests = require("./queries/course_requests");
 
 // Body Parser Middleware
 app.use(bodyParser.json());
@@ -100,6 +103,10 @@ app.get("/tutor_classes/:discord_id", function (req, res) {
 
     classesQueries.getTutorClasses(sql, res, discordID);
   });
+});
+
+app.get("/course_requests_number2", function (req, res) {
+  console.log(helper_functions.getDateForDayfNextWeek("Thursday"));
 });
 
 /**
@@ -395,3 +402,44 @@ app.get("/reschedule_test", function (req, res) {
     );
   });
 });
+
+function handleClassCreationLogic() {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+    if (timeReferenceQueries.checkIfWeekPassed(sql, res)) {
+      console.log("week passed");
+      timeReferenceQueries.getCurrentWeekDetails(
+        sql,
+        res,
+        (lastRecordedWeekObject) => {
+          const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
+          coursesQueries.getAllCourses(sql, res, (courses) => {
+            totalClassesCreated = 0;
+            for (const course in courses) {
+              const newDate = helper_functions.getDateForDay(course.Day);
+              const classCreationWorked = classesQueries.createAClass(
+                sql,
+                course.ID,
+                newWeekNumber,
+                newDate,
+                course.Day
+              );
+              if (classCreationWorked) {
+                totalClassesCreated += 1;
+              }
+            }
+            if (totalClassesCreated === courses.length) {
+              console.log("All classes created successfuly!");
+            } else {
+              console.log("Error creating classes.");
+            }
+          });
+        }
+      );
+      // create all classes with empty status and week is new week and date is the date of the date plus appropriate number of days and the day is the course day
+      // update time difference
+    } else {
+      console.log("week not passed");
+    }
+  });
+}

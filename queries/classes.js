@@ -90,4 +90,23 @@ module.exports = {
         }
       );
   },
+
+  createAClass: function (sql, courseId, weekNumber, date, day) {
+    const request = new sql.Request();
+    request
+      .input("courseID", sql.Int, courseId)
+      .input("weekNumber", sql.Int, weekNumber)
+      .input("date", sql.NVarChar, date)
+      .input("day", sql.NVarChar, day)
+      .query(
+        "INSERT INTO Classes (CourseID,Status,Week,Date,IsPaid,Day) VALUES (@courseID,'Empty',@weekNumber,@date,0,@day)",
+        function (err, recordset) {
+          if (err) {
+            return false;
+          } else {
+            return true;
+          }
+        }
+      );
+  },
 };

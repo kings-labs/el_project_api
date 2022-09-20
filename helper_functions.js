@@ -1,4 +1,40 @@
+const weekdays = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
 module.exports = {
+  isLessThanAWeekAgo: function (date) {
+    // Split the date parameter into day, month and year
+    const splittedDate = date.split("/");
+    const passedDay = splittedDate[1];
+    const passedMonth = splittedDate[0];
+    const passedYear = splittedDate[2];
+    // Split today's date into day, month and year
+    const today = new Date();
+    const currentDay = today.getDate();
+    const currentMonth = today.getMonth() + 1; // +1 because the format is 0-11
+    const currentYear = today.getFullYear();
+
+    // The days difference between the given date and today
+    const difference = getDifference(
+      passedDay,
+      passedMonth,
+      passedYear,
+      currentDay,
+      currentMonth,
+      currentYear
+    );
+    console.log("diff" + difference);
+    console.log(difference > 7);
+    return difference > 7;
+  },
+
   /**
    * @returns true if the class date started within 10 days or less, false if later
    */
@@ -72,16 +108,6 @@ module.exports = {
   getWeekDayFromDate: function (dateString) {
     const [month, day, year] = dateString.split("/");
     const date = new Date(+year, month - 1, +day);
-    const weekdays = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-
     return weekdays[date.getDay()];
   },
 
@@ -109,6 +135,29 @@ module.exports = {
         numericalMonth < 13
       );
     }
+  },
+
+  getDateForDayfNextWeek: function (day) {
+    const dayNumber = weekdays.indexOf(
+      day.charAt(0).toUpperCase() + day.slice(1)
+    );
+    const today = new Date();
+    const todayDayNumber = today.getDay();
+    const dateOfThatDay = new Date();
+    dateOfThatDay.setDate(
+      today.getDate() + Math.abs(dayNumber - todayDayNumber)
+    );
+    let monthNumber = dateOfThatDay.getMonth() + 1;
+    if (monthNumber < 10) {
+      monthNumber = "0" + monthNumber;
+    }
+    return (
+      monthNumber +
+      "/" +
+      dateOfThatDay.getDate() +
+      "/" +
+      dateOfThatDay.getFullYear()
+    );
   },
 
   /**

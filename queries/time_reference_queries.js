@@ -1,3 +1,4 @@
+const helper_functions = require("../helper_functions");
 module.exports = {
   /**
    * Gets the details of the current week as detailed in the database.
@@ -21,6 +22,25 @@ module.exports = {
           return null;
         } else {
           callback(recordset.recordset[0]);
+        }
+      }
+    );
+  },
+
+  checkIfWeekPassed: async function (sql, res) {
+    const request = new sql.Request();
+
+    await request.query(
+      "Select WeekStartDate From TimeReference",
+      function (err, recordset) {
+        if (err) {
+          console.log(err);
+          res.status(400).json({ error: err });
+          return false;
+        } else {
+          return helper_functions.isLessThanAWeekAgo(
+            recordset.recordset[0].WeekStartDate
+          );
         }
       }
     );
