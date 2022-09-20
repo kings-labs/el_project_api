@@ -19,6 +19,9 @@ const cancellationRequestsQueries = require("./queries/cancellation_requests");
 const courseRequestsQueries = require("./queries/course_requests");
 const reschedulingRequestsQueries = require("./queries/rescheduling_requests");
 const feedbacksQueries = require("./queries/feedbacks");
+const tutorsQueries = require("./queries/tutors");
+const tutorDemandsQueries = require("./queries/tutor_demands");
+const TutorDemandDateOptionsLinkQueries = require("./queries/tutor_demand_date_options_link");
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
@@ -119,9 +122,69 @@ app.get("/new_course_requests", function (req, res) {
   console.log("Request Received: GET new course requests");
 });
 
+/**
+ * {
+ * "CourseID"
+ * "TutorDiscordID"
+ * [dateOptionsID]
+ * }
+ */
+
 // Empty route to POST new tutor demands.
 app.post("/tutor_demand", function (req, res) {
-  console.log("Request Received: POST a tutor demand request");
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+    const tutorDiscordID = req.body.discordID;
+    const courseReqID = req.body.courseRequestID;
+    const dateOptions = req.body.dateOptions;
+    if (tutorDiscordID === null) {
+      res
+        .status(400)
+        .json({ error: "The tutor's discord ID can not be null." });
+      return;
+    }
+    if (courseReqID === null) {
+      res.status(400).json({ error: "The course request ID can not be null." });
+      return;
+    }
+    if (dateOptions === null || dateOptions.length === 0) {
+      res
+        .status(400)
+        .json({ error: "The date options can not be null or empty." });
+      return;
+    }
+    const tutorID = tutorsQueries.getTutorForDiscordID(
+      sql,
+      res,
+      tutorDiscordID
+    );
+    const createdTutorDemandID = tutorDemandsQueries.createATutorDemand(
+      sql,
+      res,
+      tutorID,
+      courseReqID
+    );
+
+    let createdDateOptionsLinks = 0;
+    for (const dateOptionID of dateOptions) {
+      if (
+        TutorDemandDateOptionsLinkQueries.createTutorDemandDateOptionsLinkQueries(
+          sql,
+          createdTutorDemandID,
+          dateOptionID
+        )
+      ) {
+        createdDateOptionsLinks += 1;
+      }
+    }
+    if (createdDateOptionsLinks === dateOptions.length) {
+      res.send(200).json({ message: "Tutor demand created successfuly" });
+    } else {
+      res.send(400).json({ error: "Error creating tutor demand" });
+    }
+
+    // create as many dateOptionsLink thnigs as they are dateOptions
+  });
 });
 
 /**
@@ -393,5 +456,33 @@ app.get("/reschedule_test", function (req, res) {
         res.send(recordset);
       }
     );
+  });
+});
+
+app.get("/courseRequestTest", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("select * from CourseRequests", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.send(recordset);
+    });
+  });
+});
+
+app.get("/tutorDemandTest", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("select * from TutorDemands", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.send(recordset);
+    });
   });
 });
