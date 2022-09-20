@@ -1,5 +1,5 @@
 module.exports = {
-  getAllCourses: function (sql) {
+  getAllCourses: function (sql, callback) {
     const request = new sql.Request();
 
     request.query("SELECT * FROM Courses", function (err, recordset) {
@@ -7,7 +7,7 @@ module.exports = {
         console.log(err);
         return null;
       } else {
-        return recordset.recordset;
+        callback(recordset.recordset);
       }
     });
   },

@@ -91,9 +91,9 @@ module.exports = {
       );
   },
 
-  createAClass: function (sql, courseId, weekNumber, date, day) {
+  createAClass: async function (sql, courseId, weekNumber, date, day) {
     const request = new sql.Request();
-    request
+    await request
       .input("courseID", sql.Int, courseId)
       .input("weekNumber", sql.Int, weekNumber)
       .input("date", sql.NVarChar, date)

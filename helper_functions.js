@@ -9,7 +9,7 @@ const weekdays = [
 ];
 
 module.exports = {
-  isLessThanAWeekAgo: function (date) {
+  isLessMoreAWeekAgo: async function (date) {
     // Split the date parameter into day, month and year
     const splittedDate = date.split("/");
     const passedDay = splittedDate[1];
@@ -22,7 +22,7 @@ module.exports = {
     const currentYear = today.getFullYear();
 
     // The days difference between the given date and today
-    const difference = getDifference(
+    const difference = await getDifference(
       passedDay,
       passedMonth,
       passedYear,
@@ -144,9 +144,7 @@ module.exports = {
     const today = new Date();
     const todayDayNumber = today.getDay();
     const dateOfThatDay = new Date();
-    dateOfThatDay.setDate(
-      today.getDate() + Math.abs(dayNumber - todayDayNumber)
-    );
+    dateOfThatDay.setDate(today.getDate() + (dayNumber - todayDayNumber));
     let monthNumber = dateOfThatDay.getMonth() + 1;
     if (monthNumber < 10) {
       monthNumber = "0" + monthNumber;

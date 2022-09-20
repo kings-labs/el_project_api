@@ -106,7 +106,7 @@ app.get("/tutor_classes/:discord_id", function (req, res) {
 });
 
 app.get("/course_requests_number2", function (req, res) {
-  console.log(helper_functions.getDateForDayfNextWeek("Thursday"));
+  handleClassCreationLogic();
 });
 
 /**
@@ -406,17 +406,23 @@ app.get("/reschedule_test", function (req, res) {
 function handleClassCreationLogic() {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
-    if (timeReferenceQueries.checkIfWeekPassed(sql, res)) {
+    const weekPassed = timeReferenceQueries.checkIfWeekPassed(sql);
+    if (weekPassed) {
       console.log("week passed");
       timeReferenceQueries.getCurrentWeekDetails(
         sql,
-        res,
         (lastRecordedWeekObject) => {
+          console.log("next week:" + lastRecordedWeekObject.WeekNumber + 1);
           const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
-          coursesQueries.getAllCourses(sql, res, (courses) => {
+          coursesQueries.getAllCourses(sql, (courses) => {
             totalClassesCreated = 0;
-            for (const course in courses) {
-              const newDate = helper_functions.getDateForDay(course.Day);
+            console.log(courses);
+            for (const course of courses) {
+              console.log("course" + course.ID);
+              const newDate = helper_functions.getDateForDayfNextWeek(
+                course.Day
+              );
+              console.log("new date:" + newDate);
               const classCreationWorked = classesQueries.createAClass(
                 sql,
                 course.ID,
@@ -424,14 +430,18 @@ function handleClassCreationLogic() {
                 newDate,
                 course.Day
               );
+              console.log(classCreationWorked);
               if (classCreationWorked) {
+                console.log("One worked");
                 totalClassesCreated += 1;
               }
             }
             if (totalClassesCreated === courses.length) {
               console.log("All classes created successfuly!");
+              return;
             } else {
               console.log("Error creating classes.");
+              return;
             }
           });
         }
@@ -440,6 +450,7 @@ function handleClassCreationLogic() {
       // update time difference
     } else {
       console.log("week not passed");
+      return;
     }
   });
 }

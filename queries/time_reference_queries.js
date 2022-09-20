@@ -10,7 +10,7 @@ module.exports = {
    * @param {*} res The object to return responses to the request's sender.
    * @param {*} callback The callback function.
    */
-  getCurrentWeekDetails: async function (sql, res, callback) {
+  getCurrentWeekDetails: async function (sql, callback) {
     const request = new sql.Request();
 
     await request.query(
@@ -18,7 +18,6 @@ module.exports = {
       function (err, recordset) {
         if (err) {
           console.log(err);
-          res.status(400).json({ error: err });
           return null;
         } else {
           callback(recordset.recordset[0]);
@@ -27,7 +26,7 @@ module.exports = {
     );
   },
 
-  checkIfWeekPassed: async function (sql, res) {
+  checkIfWeekPassed: async function (sql) {
     const request = new sql.Request();
 
     await request.query(
@@ -38,7 +37,8 @@ module.exports = {
           res.status(400).json({ error: err });
           return false;
         } else {
-          return helper_functions.isLessThanAWeekAgo(
+          console.log(recordset.recordset[0].WeekStartDate);
+          return helper_functions.isLessMoreAWeekAgo(
             recordset.recordset[0].WeekStartDate
           );
         }
