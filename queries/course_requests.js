@@ -16,7 +16,7 @@ module.exports = {
         const request = new sql.Request();
 
         request
-            .query('SELECT CourseRequests.ID, Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, DateOptions.ID AS DateOptionsID, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0', function (err, recordset) {
+            .query('SELECT CourseRequests.ID AS ID, Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, DateOptions.ID AS DateOptionsID, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0', function (err, recordset) {
                 if (err) {
                     console.log(err);
                     res.status(400).json({
@@ -87,55 +87,44 @@ function updateCourseRequests(sql) {
  * The method allows to get a well formatted result for the new course request route.
  * Each course request record now has a property dateOptions that gathers all the date options in a list. 
  * 
- * @param {*} result This is the list of all the new course requests.
+ * @param {*} courseRequests This is the list of all the new course requests.
  * @returns The arranged list of all the new course requests having a property date options.
  */
-function formatResult(result) {
+function formatResult(courseRequests) {
 
-    let listOfSubjects = [];
+    let processedCourseReqIDs = [];
     let resultWanted = [];
 
-    for (const newCourseRequest of result) {
-        if (!listOfSubjects.includes(newCourseRequest.Subject)) {
-            listOfSubjects.push(newCourseRequest.Subject);
-        }
-    }
+    for (const courseReq of courseRequests) {
 
-    for (const subject of listOfSubjects) {
-        let informationToRetrieve = {
-            "ID": undefined,
-            "Subject": undefined,
-            "Frequency": undefined,
-            "LevelName": undefined,
-            "Money": undefined,
-            "Duration": undefined,
-            "DateOptionsID": undefined,
-            "DateOptions": undefined
-        };
+        let informationToRetrieve = {};
 
-        let courseRequestsOfSameSubject = [];
-        for (courseRequest of result) {
-            if (courseRequest.Subject == subject) {
-                courseRequestsOfSameSubject.push(courseRequest);
-                informationToRetrieve.ID = courseRequest.ID;
-                informationToRetrieve.Subject = courseRequest.Subject;
-                informationToRetrieve.Frequency = courseRequest.Frequency;
-                informationToRetrieve.LevelName = courseRequest.LevelName;
-                informationToRetrieve.Money = courseRequest.Money;
-                informationToRetrieve.Duration = courseRequest.Duration;
+        if (!processedCourseReqIDs.includes(courseReq.ID)) {
+
+            informationToRetrieve = {
+                "ID": courseReq.ID,
+                "Subject": courseReq.subject,
+                "Frequency": courseReq.Frequency,
+                "LevelName": courseReq.LevelName,
+                "Money": courseReq.Money,
+                "Duration": courseReq.Duration,
+                "dateOptions": [],
             }
+
+            for (courseRequestWithDateOptions of courseRequests) {
+                if (courseRequestWithDateOptions.ID === courseReq.ID) {
+                    informationToRetrieve.dateOptions.push({
+                        "ID": courseRequestWithDateOptions.DateOptionsID,
+                        "String": courseRequestWithDateOptions.Day + " " + courseRequestWithDateOptions.Time
+                    });
+                }
+            }
+            
+            resultWanted.push(informationToRetrieve);
         }
 
-        let dateOptionsForCourseRequestOfSameSubject = [];
-        for (courseRequest of courseRequestsOfSameSubject) {
-            dateOptionsForCourseRequestOfSameSubject.push({ID: courseRequest.DateOptionsID, String: courseRequest.Day + " " + courseRequest.Time});
-        }
-
-        informationToRetrieve.DateOptions = dateOptionsForCourseRequestOfSameSubject;
-
-        resultWanted.push(informationToRetrieve);
+        processedCourseReqIDs.push(courseReq.ID);
     }
 
     return resultWanted;
-
 }
