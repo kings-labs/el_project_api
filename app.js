@@ -16,9 +16,11 @@ const app = express();
 const classesQueries = require("./queries/classes");
 // the cancellationRequestsQueries will hold all the functions handling SQL requests to the CancellationRequests table.
 const cancellationRequestsQueries = require("./queries/cancellation_requests");
+// the classesQueries will hold all the functions handling SQL requests to the Classes table.
 const courseRequestsQueries = require("./queries/course_requests");
 const reschedulingRequestsQueries = require("./queries/rescheduling_requests");
 const feedbacksQueries = require("./queries/feedbacks");
+
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
@@ -30,9 +32,28 @@ app.use(cors());
 
 //Setting up server
 const server = app.listen(process.env.PORT || 8080, function () {
-  const port = server.address().port;
-  console.log("App now running on port", port);
+    const port = server.address().port;
+    console.log("App now running on port", port);
 });
+
+
+/**
+ * Gets all the new course requests (with a status = 0) and updates them to pending status.
+ * 
+ * The GET request to this endpoint should hold 1 parameter: the array containing all the new course requests.
+ * 
+ * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ */
+app.get("/new_course_requests", function (req, res) {
+    
+    sql.connect(dbConfig, async function (err) {
+        if (err) console.log(err);
+
+        courseRequestsQueries.getNewCourseRequests(sql, res);
+        
+    });
+});
+
 
 /**
  * Creates a new Cancellation Request.
@@ -112,11 +133,6 @@ app.get("/course_requests_number", function (req, res) {
     if (err) console.log(err);
     courseRequestsQueries.getNumberOfCourseRequests(sql, res);
   });
-});
-
-// Empty route to GET all the new course requests.
-app.get("/new_course_requests", function (req, res) {
-  console.log("Request Received: GET new course requests");
 });
 
 // Empty route to POST new tutor demands.
@@ -382,9 +398,7 @@ app.get("/tutors_test", function (req, res) {
 app.get("/reschedule_test", function (req, res) {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
-
     const request = new sql.Request();
-
     request.query(
       "select * from reschedulingrequests",
       function (err, recordset) {
@@ -393,5 +407,23 @@ app.get("/reschedule_test", function (req, res) {
         res.send(recordset);
       }
     );
+  });
+});
+
+// http://localhost:8080/change_course_requests_status_to_new
+app.get("/change_course_requests_status_to_new", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("update CourseRequests set status = 0 where status = 1", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.status(200).json({
+        "message": "New course request(s) have been updated."
+      });
+      
+    });
   });
 });
