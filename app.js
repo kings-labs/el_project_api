@@ -16,6 +16,7 @@ const app = express();
 const classesQueries = require("./queries/classes");
 // the cancellationRequestsQueries will hold all the functions handling SQL requests to the CancellationRequests table.
 const cancellationRequestsQueries = require("./queries/cancellation_requests");
+// the classesQueries will hold all the functions handling SQL requests to the Classes table.
 const courseRequestsQueries = require("./queries/course_requests");
 const reschedulingRequestsQueries = require("./queries/rescheduling_requests");
 const feedbacksQueries = require("./queries/feedbacks");
@@ -35,6 +36,21 @@ app.use(cors());
 const server = app.listen(process.env.PORT || 8080, function () {
   const port = server.address().port;
   console.log("App now running on port", port);
+});
+
+/**
+ * Gets all the new course requests (with a status = 0) and updates them to pending status.
+ *
+ * The GET request to this endpoint should hold 1 parameter: the array containing all the new course requests.
+ *
+ * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ */
+app.get("/new_course_requests", function (req, res) {
+  sql.connect(dbConfig, async function (err) {
+    if (err) console.log(err);
+    handleClassCreationLogic(sql);
+    courseRequestsQueries.getNewCourseRequests(sql, res);
+  });
 });
 
 /**
@@ -119,11 +135,6 @@ app.get("/course_requests_number", function (req, res) {
     if (err) console.log(err);
     courseRequestsQueries.getNumberOfCourseRequests(sql, res);
   });
-});
-
-// Empty route to GET all the new course requests.
-app.get("/new_course_requests", function (req, res) {
-  console.log("Request Received: GET new course requests");
 });
 
 // Empty route to POST new tutor demands.
@@ -422,9 +433,7 @@ app.get("/time_test_2", function (req, res) {
 app.get("/reschedule_test", function (req, res) {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
-
     const request = new sql.Request();
-
     request.query(
       "select * from reschedulingrequests",
       function (err, recordset) {
@@ -436,56 +445,72 @@ app.get("/reschedule_test", function (req, res) {
   });
 });
 
-function handleClassCreationLogic() {
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
-    timeReferenceQueries.checkIfWeekPassed(sql, () => {
-      console.log("week passed");
-      timeReferenceQueries.getCurrentWeekDetails(
-        sql,
-        (lastRecordedWeekObject) => {
-          console.log("next week:" + lastRecordedWeekObject.WeekNumber + 1);
-          const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
-          coursesQueries.getAllCourses(sql, (courses) => {
-            totalClassesCreated = 0;
-            console.log(courses);
-            for (const course of courses) {
-              console.log("course" + course.ID);
-              const newDate = helper_functions.getDateForDayOfWeek(course.Day);
-              console.log("new date:" + newDate);
-              const classCreationWorked = classesQueries.createAClass(
-                sql,
-                course.ID,
-                newWeekNumber,
-                newDate,
-                course.Day
-              );
-              console.log(classCreationWorked);
-              if (classCreationWorked) {
-                console.log("One worked");
-                totalClassesCreated += 1;
-              }
+function handleClassCreationLogic(sql) {
+  timeReferenceQueries.checkIfWeekPassed(sql, () => {
+    console.log("week passed");
+    timeReferenceQueries.getCurrentWeekDetails(
+      sql,
+      (lastRecordedWeekObject) => {
+        console.log("next week:" + lastRecordedWeekObject.WeekNumber + 1);
+        const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
+        coursesQueries.getAllCourses(sql, (courses) => {
+          totalClassesCreated = 0;
+          console.log(courses);
+          for (const course of courses) {
+            console.log("course" + course.ID);
+            const newDate = helper_functions.getDateForDayOfWeek(course.Day);
+            console.log("new date:" + newDate);
+            const classCreationWorked = classesQueries.createAClass(
+              sql,
+              course.ID,
+              newWeekNumber,
+              newDate,
+              course.Day
+            );
+            console.log(classCreationWorked);
+            if (classCreationWorked) {
+              console.log("One worked");
+              totalClassesCreated += 1;
             }
-            if (totalClassesCreated === courses.length) {
-              console.log("All classes created successfuly!");
-              timeReferenceQueries.updateTimeReference(
-                sql,
-                lastRecordedWeekObject.WeekNumber,
-                newWeekNumber,
-                helper_functions.getDateForDayOfWeek("Saturday")
-              );
-              return;
-            } else {
-              console.log("Error creating classes.");
-              return;
-            }
-          });
-        }
-      );
-    });
+          }
+          if (totalClassesCreated === courses.length) {
+            console.log("All classes created successfuly!");
+            timeReferenceQueries.updateTimeReference(
+              sql,
+              lastRecordedWeekObject.WeekNumber,
+              newWeekNumber,
+              helper_functions.getDateForDayOfWeek("Saturday")
+            );
+            return;
+          } else {
+            console.log("Error creating classes.");
+            return;
+          }
+        });
+      }
+    );
   });
 }
 
 // make sure it only runs in due time
 // update the date so it does saturday to friday of the week every time VV
 // update time reference
+// http://localhost:8080/change_course_requests_status_to_new
+app.get("/change_course_requests_status_to_new", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query(
+      "update CourseRequests set status = 0 where status = 1",
+      function (err, recordset) {
+        if (err) console.log(err);
+        // send records as a response
+        res.status(200).json({
+          message: "New course request(s) have been updated.",
+        });
+      }
+    );
+  });
+});
