@@ -1,15 +1,5 @@
-const weekdays = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
-
 module.exports = {
-  isLessMoreAWeekAgo: async function (date) {
+  isMoreThanAWeekAgo: function (date) {
     // Split the date parameter into day, month and year
     const splittedDate = date.split("/");
     const passedDay = splittedDate[1];
@@ -22,7 +12,7 @@ module.exports = {
     const currentYear = today.getFullYear();
 
     // The days difference between the given date and today
-    const difference = await getDifference(
+    const difference = getDifference(
       passedDay,
       passedMonth,
       passedYear,
@@ -106,6 +96,15 @@ module.exports = {
    * @returns the week day it corresponds to.
    */
   getWeekDayFromDate: function (dateString) {
+    const weekdays = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
     const [month, day, year] = dateString.split("/");
     const date = new Date(+year, month - 1, +day);
     return weekdays[date.getDay()];
@@ -137,18 +136,36 @@ module.exports = {
     }
   },
 
-  getDateForDayfNextWeek: function (day) {
+  getDateForDayOfWeek: function (day) {
+    const weekdays = [
+      "Saturday",
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+    ];
     const dayNumber = weekdays.indexOf(
       day.charAt(0).toUpperCase() + day.slice(1)
     );
     const today = new Date();
     const todayDayNumber = today.getDay();
     const dateOfThatDay = new Date();
-    dateOfThatDay.setDate(today.getDate() + (dayNumber - todayDayNumber));
+    dateOfThatDay.setDate(today.getDate() + (dayNumber - todayDayNumber - 1));
     let monthNumber = dateOfThatDay.getMonth() + 1;
     if (monthNumber < 10) {
       monthNumber = "0" + monthNumber;
     }
+    console.log(
+      "test function: " +
+        day +
+        monthNumber +
+        "/" +
+        dateOfThatDay.getDate() +
+        "/" +
+        dateOfThatDay.getFullYear()
+    );
     return (
       monthNumber +
       "/" +

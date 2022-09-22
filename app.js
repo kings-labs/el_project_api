@@ -386,6 +386,39 @@ app.get("/tutors_test", function (req, res) {
   });
 });
 
+app.get("/time_test", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("select * from TimeReference", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.send(recordset);
+    });
+  });
+});
+
+app.get("/time_test_2", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query(
+      "UPDATE TimeReference SET WeekStartDate = '09/14/2022', WeekNumber = 0 WHERE WeekNumber = 3",
+      function (err, recordset) {
+        if (err) {
+          // send email
+        } else {
+          console.log("Time reference updated");
+        }
+      }
+    );
+  });
+});
+
 app.get("/reschedule_test", function (req, res) {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
@@ -406,8 +439,7 @@ app.get("/reschedule_test", function (req, res) {
 function handleClassCreationLogic() {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
-    const weekPassed = timeReferenceQueries.checkIfWeekPassed(sql);
-    if (weekPassed) {
+    timeReferenceQueries.checkIfWeekPassed(sql, () => {
       console.log("week passed");
       timeReferenceQueries.getCurrentWeekDetails(
         sql,
@@ -419,9 +451,7 @@ function handleClassCreationLogic() {
             console.log(courses);
             for (const course of courses) {
               console.log("course" + course.ID);
-              const newDate = helper_functions.getDateForDayfNextWeek(
-                course.Day
-              );
+              const newDate = helper_functions.getDateForDayOfWeek(course.Day);
               console.log("new date:" + newDate);
               const classCreationWorked = classesQueries.createAClass(
                 sql,
@@ -438,6 +468,12 @@ function handleClassCreationLogic() {
             }
             if (totalClassesCreated === courses.length) {
               console.log("All classes created successfuly!");
+              timeReferenceQueries.updateTimeReference(
+                sql,
+                lastRecordedWeekObject.WeekNumber,
+                newWeekNumber,
+                helper_functions.getDateForDayOfWeek("Saturday")
+              );
               return;
             } else {
               console.log("Error creating classes.");
@@ -446,11 +482,10 @@ function handleClassCreationLogic() {
           });
         }
       );
-      // create all classes with empty status and week is new week and date is the date of the date plus appropriate number of days and the day is the course day
-      // update time difference
-    } else {
-      console.log("week not passed");
-      return;
-    }
+    });
   });
 }
+
+// make sure it only runs in due time
+// update the date so it does saturday to friday of the week every time VV
+// update time reference

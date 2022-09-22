@@ -26,10 +26,10 @@ module.exports = {
     );
   },
 
-  checkIfWeekPassed: async function (sql) {
+  checkIfWeekPassed: function (sql, callback) {
     const request = new sql.Request();
 
-    await request.query(
+    request.query(
       "Select WeekStartDate From TimeReference",
       function (err, recordset) {
         if (err) {
@@ -37,12 +37,42 @@ module.exports = {
           res.status(400).json({ error: err });
           return false;
         } else {
-          console.log(recordset.recordset[0].WeekStartDate);
-          return helper_functions.isLessMoreAWeekAgo(
-            recordset.recordset[0].WeekStartDate
-          );
+          if (
+            helper_functions.isMoreThanAWeekAgo(
+              recordset.recordset[0].WeekStartDate
+            )
+          ) {
+            console.log("test");
+            callback();
+          } else {
+            console.log("Week not passed.");
+          }
         }
       }
     );
+  },
+
+  updateTimeReference: function (
+    sql,
+    lastWeekNumber,
+    newWeekNumber,
+    newWeekStartDate
+  ) {
+    const request = new sql.Request();
+
+    request
+      .input("lastWeekNumber", sql.Int, lastWeekNumber)
+      .input("weekNumber", sql.Int, newWeekNumber)
+      .input("weekStartDate", sql.NVarChar, newWeekStartDate)
+      .query(
+        "UPDATE TimeReference SET WeekStartDate = @weekStartDate, WeekNumber = @weekNumber WHERE WeekNumber = @lastWeekNumber",
+        function (err, recordset) {
+          if (err) {
+            // send email
+          } else {
+            console.log("Time reference updated");
+          }
+        }
+      );
   },
 };
