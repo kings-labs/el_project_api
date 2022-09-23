@@ -26,7 +26,6 @@ const timeReferenceQueries = require("./queries/time_reference_queries");
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
 const helper_functions = require("./helper_functions");
-const course_requests = require("./queries/course_requests");
 
 // Body Parser Middleware
 app.use(bodyParser.json());
@@ -51,8 +50,9 @@ const server = app.listen(process.env.PORT || 8080, function () {
 app.get("/new_course_requests", function (req, res) {
   sql.connect(dbConfig, async function (err) {
     if (err) console.log(err);
-    handleClassCreationLogic(sql);
-    courseRequestsQueries.getNewCourseRequests(sql, res);
+    handleClassCreationLogic(sql).then(() => {
+      courseRequestsQueries.getNewCourseRequests(sql, res);
+    });
   });
 });
 
@@ -122,10 +122,6 @@ app.get("/tutor_classes/:discord_id", function (req, res) {
 
     classesQueries.getTutorClasses(sql, res, discordID);
   });
-});
-
-app.get("/course_requests_number2", function (req, res) {
-  handleClassCreationLogic();
 });
 
 /**
@@ -421,10 +417,10 @@ app.get("/time_test_2", function (req, res) {
     const request = new sql.Request();
 
     request.query(
-      "UPDATE TimeReference SET WeekStartDate = '09/14/2022', WeekNumber = 0 WHERE WeekNumber = 3",
+      "UPDATE TimeReference SET WeekStartDate = '09/14/2022', WeekNumber = 0 WHERE WeekNumber = 1",
       function (err, recordset) {
         if (err) {
-          // send email
+          console.log(err);
         } else {
           console.log("Time reference updated");
         }
@@ -461,7 +457,7 @@ app.get("/reschedule_test", function (req, res) {
  *
  * @param {} sql An instance of mssql connected to our database
  */
-function handleClassCreationLogic(sql) {
+async function handleClassCreationLogic(sql) {
   // Check if a week passed
   timeReferenceQueries.checkIfWeekPassed(sql, () => {
     timeReferenceQueries.getCurrentWeekDetails(
