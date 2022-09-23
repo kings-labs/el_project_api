@@ -3,6 +3,7 @@
  * Note about the status returned by the various routes:
  * 200: general success
  * 400: general failure
+ * 401: authentication failure
  * 412: failure because the classID passed to the request does not exist
  * 406: failure because the class a request was made for already received a request of the same type (Cancel, Rescheduling or Feedback)
  */
@@ -22,6 +23,9 @@ const reschedulingRequestsQueries = require("./queries/rescheduling_requests");
 const feedbacksQueries = require("./queries/feedbacks");
 const coursesQueries = require("./queries/courses");
 const timeReferenceQueries = require("./queries/time_reference_queries");
+const usersQueries = require("./queries/users");
+
+const safetyLayer = require("./middleware/safetyLayer");
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
@@ -48,10 +52,12 @@ const server = app.listen(process.env.PORT || 8080, function () {
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/new_course_requests", function (req, res) {
-  sql.connect(dbConfig, async function (err) {
-    if (err) console.log(err);
-    handleClassCreationLogic(sql).then(() => {
-      courseRequestsQueries.getNewCourseRequests(sql, res);
+  safetyLayer.checkAuth(req, res, () => {
+    sql.connect(dbConfig, async function (err) {
+      if (err) console.log(err);
+      handleClassCreationLogic(sql).then(() => {
+        courseRequestsQueries.getNewCourseRequests(sql, res);
+      });
     });
   });
 });
@@ -68,36 +74,38 @@ app.get("/new_course_requests", function (req, res) {
  * If the class does not exist it will give out a status of 412.
  */
 app.post("/cancellation_request", function (req, res) {
-  // Connecting to the database.
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
+  safetyLayer.checkAuth(req, res, () => {
+    // Connecting to the database.
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
 
-    const classID = req.body.class_ID;
-    const reason = req.body.reason;
-    if (reason === null) {
-      res.status(400).json({ error: "The reason can not be null." });
-      return;
-    }
-    if (classID === null) {
-      res.status(400).json({ error: "The classID can not be null." });
-      return;
-    }
+      const classID = req.body.class_ID;
+      const reason = req.body.reason;
+      if (reason === null) {
+        res.status(400).json({ error: "The reason can not be null." });
+        return;
+      }
+      if (classID === null) {
+        res.status(400).json({ error: "The classID can not be null." });
+        return;
+      }
 
-    // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-    classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-      cancellationRequestsQueries.checkIfNoPendingRequestForSameClass(
-        sql,
-        res,
-        classID,
-        () => {
-          cancellationRequestsQueries.createCancellationRequest(
-            sql,
-            res,
-            classID,
-            reason
-          );
-        }
-      );
+      // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+      classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+        cancellationRequestsQueries.checkIfNoPendingRequestForSameClass(
+          sql,
+          res,
+          classID,
+          () => {
+            cancellationRequestsQueries.createCancellationRequest(
+              sql,
+              res,
+              classID,
+              reason
+            );
+          }
+        );
+      });
     });
   });
 });
@@ -110,17 +118,19 @@ app.post("/cancellation_request", function (req, res) {
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/tutor_classes/:discord_id", function (req, res) {
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
+  safetyLayer.checkAuth(req, res, () => {
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
 
-    const discordID = req.params.discord_id;
+      const discordID = req.params.discord_id;
 
-    if (discordID === null) {
-      res.status(400).json({ error: "Discord id can not be null" });
-      return;
-    }
+      if (discordID === null) {
+        res.status(400).json({ error: "Discord id can not be null" });
+        return;
+      }
 
-    classesQueries.getTutorClasses(sql, res, discordID);
+      classesQueries.getTutorClasses(sql, res, discordID);
+    });
   });
 });
 
@@ -130,15 +140,26 @@ app.get("/tutor_classes/:discord_id", function (req, res) {
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/course_requests_number", function (req, res) {
+  safetyLayer.checkAuth(req, res, () => {
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
+      courseRequestsQueries.getNumberOfCourseRequests(sql, res);
+    });
+  });
+});
+
+app.post("/login", function (req, res) {
   sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
-    courseRequestsQueries.getNumberOfCourseRequests(sql, res);
+    console.log("yep");
+    usersQueries.login(sql, res, req.body.username, req.body.password);
   });
 });
 
 // Empty route to POST new tutor demands.
 app.post("/tutor_demand", function (req, res) {
-  console.log("Request Received: POST a tutor demand request");
+  safetyLayer.checkAuth(req, res, () => {
+    console.log("Request Received: POST a tutor demand request");
+  });
 });
 
 /**
@@ -154,51 +175,53 @@ app.post("/tutor_demand", function (req, res) {
  * If the class does not exist it will give out a status of 412.
  */
 app.post("/rescheduling_request", function (req, res) {
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
+  safetyLayer.checkAuth(req, res, () => {
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
 
-    const classID = req.body.class_ID;
-    const reason = req.body.reason;
-    const newDate = req.body.new_date;
+      const classID = req.body.class_ID;
+      const reason = req.body.reason;
+      const newDate = req.body.new_date;
 
-    if (reason === null) {
-      res.status(400).json({ error: "The reason can not be null." });
-      return;
-    }
-    if (classID === null) {
-      res.status(400).json({ error: "The classID can not be null." });
-      return;
-    }
-    if (newDate === null) {
-      res.status(400).json({ error: "The newDate can not be null." });
-      return;
-    }
-
-    if (helper_functions.isValidDateFormat(newDate)) {
-      if (helper_functions.isInTheFuture(newDate)) {
-        // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-        classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-          reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
-            sql,
-            res,
-            classID,
-            () => {
-              reschedulingRequestsQueries.createReschedulingRequest(
-                sql,
-                res,
-                classID,
-                reason,
-                newDate
-              );
-            }
-          );
-        });
-      } else {
-        res.status(402).json({ error: "NewDate is not in the future." });
+      if (reason === null) {
+        res.status(400).json({ error: "The reason can not be null." });
+        return;
       }
-    } else {
-      res.status(408).json({ error: "Unvalid date format." });
-    }
+      if (classID === null) {
+        res.status(400).json({ error: "The classID can not be null." });
+        return;
+      }
+      if (newDate === null) {
+        res.status(400).json({ error: "The newDate can not be null." });
+        return;
+      }
+
+      if (helper_functions.isValidDateFormat(newDate)) {
+        if (helper_functions.isInTheFuture(newDate)) {
+          // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+          classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+            reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
+              sql,
+              res,
+              classID,
+              () => {
+                reschedulingRequestsQueries.createReschedulingRequest(
+                  sql,
+                  res,
+                  classID,
+                  reason,
+                  newDate
+                );
+              }
+            );
+          });
+        } else {
+          res.status(402).json({ error: "NewDate is not in the future." });
+        }
+      } else {
+        res.status(408).json({ error: "Unvalid date format." });
+      }
+    });
   });
 });
 
@@ -214,31 +237,33 @@ app.post("/rescheduling_request", function (req, res) {
  * If the class does not exist it will give out a status of 412.
  */
 app.post("/feedback_creation", function (req, res) {
-  // Connecting to the database.
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
+  safetyLayer.checkAuth(req, res, () => {
+    // Connecting to the database.
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
 
-    const classID = req.body.class_ID;
-    const feedback = req.body.feedback;
-    if (feedback === null) {
-      res.status(400).json({ error: "The feedback note can not be null." });
-      return;
-    }
-    if (classID === null) {
-      res.status(400).json({ error: "The classID can not be null." });
-      return;
-    }
+      const classID = req.body.class_ID;
+      const feedback = req.body.feedback;
+      if (feedback === null) {
+        res.status(400).json({ error: "The feedback note can not be null." });
+        return;
+      }
+      if (classID === null) {
+        res.status(400).json({ error: "The classID can not be null." });
+        return;
+      }
 
-    // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-    classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-      feedbacksQueries.checkIfNoPendingRequestForSameClass(
-        sql,
-        res,
-        classID,
-        () => {
-          feedbacksQueries.createFeedback(sql, res, classID, feedback);
-        }
-      );
+      // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+      classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+        feedbacksQueries.checkIfNoPendingRequestForSameClass(
+          sql,
+          res,
+          classID,
+          () => {
+            feedbacksQueries.createFeedback(sql, res, classID, feedback);
+          }
+        );
+      });
     });
   });
 });
