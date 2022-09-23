@@ -1,4 +1,8 @@
 module.exports = {
+  /**
+   * @param {*} date The date to check for.
+   * @returns True if the date is more than a week ago, false if not.
+   */
   isMoreThanAWeekAgo: function (date) {
     // Split the date parameter into day, month and year
     const splittedDate = date.split("/");
@@ -22,7 +26,7 @@ module.exports = {
     );
     console.log("diff" + difference);
     console.log(difference > 7);
-    return difference > 7;
+    return difference >= 7;
   },
 
   /**
@@ -136,6 +140,13 @@ module.exports = {
     }
   },
 
+  /**
+   * Get the date of a given day of the week for the current week (if we are Thursday 09/22/2022 and pass Friday as a parameter it will return 09/23/2022).
+   * Crucial Note: our week starts on the Saturday morning and ends on the Friday.
+   *
+   * @param {*} day The day to get the date of.
+   * @returns This day's date.
+   */
   getDateForDayOfWeek: function (day) {
     const weekdays = [
       "Saturday",

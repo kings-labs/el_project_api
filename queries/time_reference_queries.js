@@ -26,6 +26,12 @@ module.exports = {
     );
   },
 
+  /**
+   * Checks if a week has passed since the last recorded time reference record.
+   * If yes, it will call a callback function if not, nothing major happens.
+   * @param {*} sql A connected mssql instance.
+   * @param {*} callback The callback function.
+   */
   checkIfWeekPassed: function (sql, callback) {
     const request = new sql.Request();
 

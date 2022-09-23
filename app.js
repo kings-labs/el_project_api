@@ -39,9 +39,12 @@ const server = app.listen(process.env.PORT || 8080, function () {
 });
 
 /**
- * Gets all the new course requests (with a status = 0) and updates them to pending status.
+ * Gets all the new course requests (with a status = 0) and updates them to pending status and returns an Array containing all of them.
  *
- * The GET request to this endpoint should hold 1 parameter: the array containing all the new course requests.
+ * This endpoint also calls the handleClassCreationLogic function as this is the endpoint that will be called
+ * by the bot repetitively. This represents a logical dependency but a dependency that is, one, essential, two, acceptable
+ * as if the new_course_request is not shown it represents a sufficient risk for the overall system for the class creation logic's
+ * dependance on it to be a problem.
  *
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
@@ -445,21 +448,33 @@ app.get("/reschedule_test", function (req, res) {
   });
 });
 
+/**
+ * Handles all logic related to creating classes. This function should be called as often as possible and will
+ * do the following:
+ *      - Check if more than a week occured since the last recorded week started
+ *      - If yes,
+ *              - Get all informations necessary to create new classes (the week number, day of the week, and date)
+ *              - Create a new class for each course with the right information
+ *              - Update the Time Reference record with the new week number and the date corresponding to the week start date (the saturday of the week the function ran)
+ *      - If no,
+ *              - Does nothing
+ *
+ * @param {} sql An instance of mssql connected to our database
+ */
 function handleClassCreationLogic(sql) {
+  // Check if a week passed
   timeReferenceQueries.checkIfWeekPassed(sql, () => {
-    console.log("week passed");
     timeReferenceQueries.getCurrentWeekDetails(
       sql,
       (lastRecordedWeekObject) => {
-        console.log("next week:" + lastRecordedWeekObject.WeekNumber + 1);
+        // Calculates the week number of next week
         const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
         coursesQueries.getAllCourses(sql, (courses) => {
           totalClassesCreated = 0;
-          console.log(courses);
           for (const course of courses) {
-            console.log("course" + course.ID);
+            // Calculates the date of the class for this course
             const newDate = helper_functions.getDateForDayOfWeek(course.Day);
-            console.log("new date:" + newDate);
+            // Creates the class record
             const classCreationWorked = classesQueries.createAClass(
               sql,
               course.ID,
@@ -467,13 +482,13 @@ function handleClassCreationLogic(sql) {
               newDate,
               course.Day
             );
-            console.log(classCreationWorked);
+            // Count the number of classes created
             if (classCreationWorked) {
-              console.log("One worked");
               totalClassesCreated += 1;
             }
           }
           if (totalClassesCreated === courses.length) {
+            // If all are created, update time reference
             console.log("All classes created successfuly!");
             timeReferenceQueries.updateTimeReference(
               sql,
@@ -483,7 +498,9 @@ function handleClassCreationLogic(sql) {
             );
             return;
           } else {
+            // If not, send email.
             console.log("Error creating classes.");
+            // send email
             return;
           }
         });
