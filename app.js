@@ -132,9 +132,19 @@ app.get("/course_requests_number", function (req, res) {
   });
 });
 
-// Empty route to GET all the new course requests.
+/**
+ * Gets all the new course requests (with a status = 0) and updates them to pending status.
+ *
+ * The GET request to this endpoint should hold 1 parameter: the array containing all the new course requests.
+ *
+ * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ */
 app.get("/new_course_requests", function (req, res) {
-  console.log("Request Received: GET new course requests");
+  sql.connect(dbConfig, async function (err) {
+    if (err) console.log(err);
+
+    courseRequestsQueries.getNewCourseRequests(sql, res);
+  });
 });
 
 /**
