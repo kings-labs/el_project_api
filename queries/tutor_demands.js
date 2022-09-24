@@ -1,5 +1,14 @@
 module.exports = {
-  createATutorDemand: function (sql, res, tutorID, courseRequestID) {
+  /**
+   * Creates a TutorDemand record.
+   *
+   * @param {*} sql A connected mssql instance.
+   * @param {*} res An object to send a response to the caller.
+   * @param {*} tutorID The ID of the tutor submitting a tutor demand.
+   * @param {*} courseRequestID The ID of the courseRequest a tutor demand is submitted for.
+   * @param {*} callback The callback function to be called if all happened properly.
+   */
+  createATutorDemand: function (sql, res, tutorID, courseRequestID, callback) {
     const request = new sql.Request();
     request
       .input("tutorID", sql.Int, tutorID)
@@ -12,7 +21,7 @@ module.exports = {
             res.status(400).json({ err: err });
             return null;
           } else {
-            return recordset.output.lastID;
+            callback(recordset.output.lastID);
           }
         }
       );
