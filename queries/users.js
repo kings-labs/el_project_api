@@ -22,7 +22,7 @@ module.exports = {
         "SELECT Password, ID FROM Users WHERE Username = @username",
         function (err, recordset) {
           if (err) {
-            res.status(404).json({ "err loging in": err });
+            res.status(400).json({ "err loging in": err });
           } else {
             const hasedInputPwd = crypto
               .createHash("sha256")

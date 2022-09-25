@@ -148,6 +148,12 @@ app.get("/course_requests_number", function (req, res) {
   });
 });
 
+/**
+ * Enables user to login using a username and password combination. If this combination is valid, it will return
+ * a token to be used in further queries.
+ *
+ * If authentication failed, the status returned is 401, for any other failure it's 400, and for success it's 200.
+ */
 app.post("/login", function (req, res) {
   sql.connect(dbConfig, function (err) {
     console.log("yep");
