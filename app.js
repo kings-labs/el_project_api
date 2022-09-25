@@ -456,7 +456,7 @@ app.get("/reschedule_test", function (req, res) {
  *      - If no,
  *              - Does nothing
  *
- * @param {} sql An instance of mssql connected to our database
+ * @param {*} sql An instance of mssql connected to our database
  */
 async function handleClassCreationLogic(sql) {
   // Check if a week passed
