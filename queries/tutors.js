@@ -18,7 +18,13 @@ module.exports = {
             res.status(400).json({ err: err });
             return null;
           } else {
-            callback(recordset.recordset[0].ID);
+            if (recordset.rowsAffected[0] === 0) {
+              res
+                .status(400)
+                .json({ err: "No tutor with this discordID exists." });
+            } else {
+              callback(recordset.recordset[0].ID);
+            }
           }
         }
       );
