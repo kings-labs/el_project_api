@@ -18,7 +18,6 @@ module.exports = {
   createReschedulingRequest: function (sql, res, classID, reason, newDate) {
     timeReferenceQueries.getCurrentWeekDetails(
       sql,
-      res,
       (lastRecordedWeekObject) => {
         createAReschedulingRequestWithOriginalDate(
           sql,

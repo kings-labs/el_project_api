@@ -15,10 +15,10 @@ module.exports = {
     });
 
     var mailOptions = {
-      from: "elproject.kingslabs@gmail.com",
+      from: "API",
       to: "elproject.kingslabs@gmail.com",
-      subject: "Sending Email using Node.js",
-      text: "That was easy!",
+      subject: "[URGENT - API] Error when creating classes",
+      text: getClassCreationErrorEmail(numberCreatedClasses),
     };
 
     transporter.sendMail(mailOptions, function (error, info) {
@@ -31,30 +31,65 @@ module.exports = {
   },
 
   sendErroEmailToAdmin: function (
-    errorDescription,
-    endpointName,
-    parameters,
-    errorMessage
+    endpoint,
+    params,
+    errorMessage,
+    errorBriefDesc
   ) {
-    var data = {
-      service_id: "service_eh86pyf",
-      template_id: "template_qbcuaom",
-      user_id: "JNRm3NdB9GTU6q2te",
-      template_params: {
-        error_type: errorDescription,
-        endpoint_name: endpointName,
-        params: parameters,
-        error_message: errorMessage,
+    var transporter = nodemailer.createTransport({
+      host: "smtp.mailtrap.io",
+      port: 2525,
+      auth: {
+        user: "85f2707c640984",
+        pass: "f3f9c8213c524f",
       },
+    });
+
+    var mailOptions = {
+      from: "API",
+      to: "elproject.kingslabs@gmail.com",
+      subject: "[API] Error when " + errorBriefDesc,
+      text: getGeneralErrorEmail(endpoint, params, errorMessage),
     };
-    fetch("https://api.emailjs.com/api/v1.0/email/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }).then((res) => {
-      console.log("Request complete! response:", res);
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
     });
   },
+  /**
+   * @param {*} date The date to check for.
+   * @returns True if the date is more than a week ago, false if not.
+   */
+  isMoreThanAWeekAgo: function (date) {
+    // Split the date parameter into day, month and year
+    const splittedDate = date.split("/");
+    const passedDay = splittedDate[1];
+    const passedMonth = splittedDate[0];
+    const passedYear = splittedDate[2];
+    // Split today's date into day, month and year
+    const today = new Date();
+    const currentDay = today.getDate();
+    const currentMonth = today.getMonth() + 1; // +1 because the format is 0-11
+    const currentYear = today.getFullYear();
+
+    // The days difference between the given date and today
+    const difference = getDifference(
+      passedDay,
+      passedMonth,
+      passedYear,
+      currentDay,
+      currentMonth,
+      currentYear
+    );
+    console.log("diff" + difference);
+    console.log(difference > 7);
+    return difference >= 7;
+  },
+
   /**
    * @returns true if the class date started within 10 days or less, false if later
    */
@@ -126,8 +161,6 @@ module.exports = {
    * @returns the week day it corresponds to.
    */
   getWeekDayFromDate: function (dateString) {
-    const [month, day, year] = dateString.split("/");
-    const date = new Date(+year, month - 1, +day);
     const weekdays = [
       "Sunday",
       "Monday",
@@ -137,7 +170,8 @@ module.exports = {
       "Friday",
       "Saturday",
     ];
-
+    const [month, day, year] = dateString.split("/");
+    const date = new Date(+year, month - 1, +day);
     return weekdays[date.getDay()];
   },
 
@@ -165,6 +199,52 @@ module.exports = {
         numericalMonth < 13
       );
     }
+  },
+
+  /**
+   * Get the date of a given day of the week for the current week (if we are Thursday 09/22/2022 and pass Friday as a parameter it will return 09/23/2022).
+   * Crucial Note: our week starts on the Saturday morning and ends on the Friday.
+   *
+   * @param {*} day The day to get the date of.
+   * @returns This day's date.
+   */
+  getDateForDayOfWeek: function (day) {
+    const weekdays = [
+      "Saturday",
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+    ];
+    const dayNumber = weekdays.indexOf(
+      day.charAt(0).toUpperCase() + day.slice(1)
+    );
+    const today = new Date();
+    const todayDayNumber = today.getDay();
+    const dateOfThatDay = new Date();
+    dateOfThatDay.setDate(today.getDate() + (dayNumber - todayDayNumber - 1));
+    let monthNumber = dateOfThatDay.getMonth() + 1;
+    if (monthNumber < 10) {
+      monthNumber = "0" + monthNumber;
+    }
+    console.log(
+      "test function: " +
+        day +
+        monthNumber +
+        "/" +
+        dateOfThatDay.getDate() +
+        "/" +
+        dateOfThatDay.getFullYear()
+    );
+    return (
+      monthNumber +
+      "/" +
+      dateOfThatDay.getDate() +
+      "/" +
+      dateOfThatDay.getFullYear()
+    );
   },
 
   /**
@@ -249,4 +329,28 @@ function getDifference(pD, pM, pY, cD, cM, cY) {
 
   // return difference between two counts
   return currentCount - passedCount;
+}
+
+function getClassCreationErrorEmail(number_of_classes_created) {
+  let message = "";
+  message += "Hello,\n\n";
+  message +=
+    "Classes where not created successfuly this week. Please dig into it!\n\n";
+  message +=
+    "Only " +
+    number_of_classes_created +
+    " classes were successfully created.\n\n";
+  message += "Good luck!\nAPI Error Tracker";
+  return message;
+}
+
+function getGeneralErrorEmail(endpoint, params, errorMessage) {
+  let message = "";
+  message += "Hi,\n\n";
+  message += "The API encountered an error you may want to adress.\n\n";
+  message += "Endpoint: " + endpoint + "\n";
+  message += "Parameters it was called with: " + params + "\n";
+  message += "Error message: " + errorMessage + "\n\n";
+  message += "Good luck!\nAPI Error Tracker";
+  return message;
 }
