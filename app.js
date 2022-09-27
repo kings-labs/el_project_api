@@ -72,13 +72,13 @@ app.post("/cancellation_request", function (req, res) {
     const reason = req.body.reason;
     if (reason === null) {
       res.status(400).json({
-        error: "The reason can not be null."
+        error: "The reason can not be null.",
       });
       return;
     }
     if (classID === null) {
       res.status(400).json({
-        error: "The classID can not be null."
+        error: "The classID can not be null.",
       });
       return;
     }
@@ -117,7 +117,7 @@ app.get("/tutor_classes/:discord_id", function (req, res) {
 
     if (discordID === null) {
       res.status(400).json({
-        error: "Discord id can not be null"
+        error: "Discord id can not be null",
       });
       return;
     }
@@ -166,25 +166,21 @@ app.post("/tutor_demand", function (req, res) {
     const courseReqID = req.body.courseRequestID;
     const dateOptions = req.body.dateOptions;
     if (tutorDiscordID === null) {
-      res
-        .status(400)
-        .json({
-          error: "The tutor's discord ID can not be null."
-        });
+      res.status(400).json({
+        error: "The tutor's discord ID can not be null.",
+      });
       return;
     }
     if (courseReqID === null) {
       res.status(400).json({
-        error: "The course request ID can not be null."
+        error: "The course request ID can not be null.",
       });
       return;
     }
     if (dateOptions === null || dateOptions.length === 0) {
-      res
-        .status(400)
-        .json({
-          error: "The date options can not be null or empty."
-        });
+      res.status(400).json({
+        error: "The date options can not be null or empty.",
+      });
       return;
     }
     courseRequestsQueries.checkIfCourseReqExistsWithID(
@@ -253,19 +249,19 @@ app.post("/rescheduling_request", function (req, res) {
 
     if (reason === null) {
       res.status(400).json({
-        error: "The reason can not be null."
+        error: "The reason can not be null.",
       });
       return;
     }
     if (classID === null) {
       res.status(400).json({
-        error: "The classID can not be null."
+        error: "The classID can not be null.",
       });
       return;
     }
     if (newDate === null) {
       res.status(400).json({
-        error: "The newDate can not be null."
+        error: "The newDate can not be null.",
       });
       return;
     }
@@ -291,12 +287,12 @@ app.post("/rescheduling_request", function (req, res) {
         });
       } else {
         res.status(402).json({
-          error: "NewDate is not in the future."
+          error: "NewDate is not in the future.",
         });
       }
     } else {
       res.status(408).json({
-        error: "Unvalid date format."
+        error: "Unvalid date format.",
       });
     }
   });
@@ -322,13 +318,13 @@ app.post("/feedback_creation", function (req, res) {
     const feedback = req.body.feedback;
     if (feedback === null) {
       res.status(400).json({
-        error: "The feedback note can not be null."
+        error: "The feedback note can not be null.",
       });
       return;
     }
     if (classID === null) {
       res.status(400).json({
-        error: "The classID can not be null."
+        error: "The classID can not be null.",
       });
       return;
     }
@@ -546,6 +542,10 @@ app.get("/tutorDemandTest", function (req, res) {
       res.send(recordset);
     });
   });
+});
+
+app.get("/mailTest", function (req, res) {
+  helper_functions.sendClasssesNotCreatedEmailToAdmin("3");
 });
 
 app.get("/courseRequestTest", function (req, res) {

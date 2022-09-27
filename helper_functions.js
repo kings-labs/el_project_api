@@ -1,4 +1,60 @@
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
+
+var nodemailer = require("nodemailer");
+
 module.exports = {
+  sendClasssesNotCreatedEmailToAdmin: function (numberCreatedClasses) {
+    var transporter = nodemailer.createTransport({
+      host: "smtp.mailtrap.io",
+      port: 2525,
+      auth: {
+        user: "85f2707c640984",
+        pass: "f3f9c8213c524f",
+      },
+    });
+
+    var mailOptions = {
+      from: "elproject.kingslabs@gmail.com",
+      to: "elproject.kingslabs@gmail.com",
+      subject: "Sending Email using Node.js",
+      text: "That was easy!",
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    });
+  },
+
+  sendErroEmailToAdmin: function (
+    errorDescription,
+    endpointName,
+    parameters,
+    errorMessage
+  ) {
+    var data = {
+      service_id: "service_eh86pyf",
+      template_id: "template_qbcuaom",
+      user_id: "JNRm3NdB9GTU6q2te",
+      template_params: {
+        error_type: errorDescription,
+        endpoint_name: endpointName,
+        params: parameters,
+        error_message: errorMessage,
+      },
+    };
+    fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((res) => {
+      console.log("Request complete! response:", res);
+    });
+  },
   /**
    * @returns true if the class date started within 10 days or less, false if later
    */
