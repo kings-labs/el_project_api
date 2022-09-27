@@ -26,7 +26,7 @@ module.exports = {
             result: formatResult(recordset.recordset),
           });
 
-          updateCourseRequests(sql);
+          //updateCourseRequests(sql);
         }
       }
     );
@@ -172,7 +172,7 @@ function formatResult(courseRequests) {
     if (!processedCourseReqIDs.includes(courseReq.ID)) {
       informationToRetrieve = {
         ID: courseReq.ID,
-        Subject: courseReq.subject,
+        Subject: courseReq.Subject,
         Frequency: courseReq.Frequency,
         LevelName: courseReq.LevelName,
         Money: courseReq.Money,

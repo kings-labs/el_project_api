@@ -71,11 +71,15 @@ app.post("/cancellation_request", function (req, res) {
     const classID = req.body.class_ID;
     const reason = req.body.reason;
     if (reason === null) {
-      res.status(400).json({ error: "The reason can not be null." });
+      res.status(400).json({
+        error: "The reason can not be null."
+      });
       return;
     }
     if (classID === null) {
-      res.status(400).json({ error: "The classID can not be null." });
+      res.status(400).json({
+        error: "The classID can not be null."
+      });
       return;
     }
 
@@ -112,7 +116,9 @@ app.get("/tutor_classes/:discord_id", function (req, res) {
     const discordID = req.params.discord_id;
 
     if (discordID === null) {
-      res.status(400).json({ error: "Discord id can not be null" });
+      res.status(400).json({
+        error: "Discord id can not be null"
+      });
       return;
     }
 
@@ -162,17 +168,23 @@ app.post("/tutor_demand", function (req, res) {
     if (tutorDiscordID === null) {
       res
         .status(400)
-        .json({ error: "The tutor's discord ID can not be null." });
+        .json({
+          error: "The tutor's discord ID can not be null."
+        });
       return;
     }
     if (courseReqID === null) {
-      res.status(400).json({ error: "The course request ID can not be null." });
+      res.status(400).json({
+        error: "The course request ID can not be null."
+      });
       return;
     }
     if (dateOptions === null || dateOptions.length === 0) {
       res
         .status(400)
-        .json({ error: "The date options can not be null or empty." });
+        .json({
+          error: "The date options can not be null or empty."
+        });
       return;
     }
     courseRequestsQueries.checkIfCourseReqExistsWithID(
@@ -240,15 +252,21 @@ app.post("/rescheduling_request", function (req, res) {
     const newDate = req.body.new_date;
 
     if (reason === null) {
-      res.status(400).json({ error: "The reason can not be null." });
+      res.status(400).json({
+        error: "The reason can not be null."
+      });
       return;
     }
     if (classID === null) {
-      res.status(400).json({ error: "The classID can not be null." });
+      res.status(400).json({
+        error: "The classID can not be null."
+      });
       return;
     }
     if (newDate === null) {
-      res.status(400).json({ error: "The newDate can not be null." });
+      res.status(400).json({
+        error: "The newDate can not be null."
+      });
       return;
     }
 
@@ -272,10 +290,14 @@ app.post("/rescheduling_request", function (req, res) {
           );
         });
       } else {
-        res.status(402).json({ error: "NewDate is not in the future." });
+        res.status(402).json({
+          error: "NewDate is not in the future."
+        });
       }
     } else {
-      res.status(408).json({ error: "Unvalid date format." });
+      res.status(408).json({
+        error: "Unvalid date format."
+      });
     }
   });
 });
@@ -299,11 +321,15 @@ app.post("/feedback_creation", function (req, res) {
     const classID = req.body.class_ID;
     const feedback = req.body.feedback;
     if (feedback === null) {
-      res.status(400).json({ error: "The feedback note can not be null." });
+      res.status(400).json({
+        error: "The feedback note can not be null."
+      });
       return;
     }
     if (classID === null) {
-      res.status(400).json({ error: "The classID can not be null." });
+      res.status(400).json({
+        error: "The classID can not be null."
+      });
       return;
     }
 
@@ -490,7 +516,7 @@ app.get("/reschedule_test", function (req, res) {
 });
 
 // http://localhost:8080/change_course_requests_status_to_new
-app.get("/change_course_requests_status_to_new", function (req, res) {
+app.put("/change_course_requests_status_to_new", function (req, res) {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
 
