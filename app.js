@@ -1,11 +1,14 @@
 /**
  * This is the main file of the application that routes and connections to the database.
  * Note about the status returned by the various routes:
- * 200: general success
- * 400: general failure
+
+ * 200: General success
+ * 400: General failure
  * 401: authentication failure
- * 412: failure because the classID passed to the request does not exist
- * 406: failure because the class a request was made for already received a request of the same type (Cancel, Rescheduling or Feedback)
+ * 408: Unvalid date format
+ * 412: Failure because the classID passed to the request does not exist
+ * 406: Failure because the class a request was made for already received a request of the same type (Cancel, Rescheduling or Feedback)
+ 
  */
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -486,7 +489,7 @@ app.get("/reschedule_test", function (req, res) {
  *      - If no,
  *              - Does nothing
  *
- * @param {} sql An instance of mssql connected to our database
+ * @param {*} sql An instance of mssql connected to our database
  */
 async function handleClassCreationLogic(sql) {
   // Check if a week passed
