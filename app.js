@@ -3,6 +3,7 @@
  * Note about the status returned by the various routes:
  * 200: general success
  * 400: general failure
+ * 401: authentication failure
  * 412: failure because the classID passed to the request does not exist
  * 406: failure because the class a request was made for already received a request of the same type (Cancel, Rescheduling or Feedback)
  */
@@ -20,7 +21,11 @@ const cancellationRequestsQueries = require("./queries/cancellation_requests");
 const courseRequestsQueries = require("./queries/course_requests");
 const reschedulingRequestsQueries = require("./queries/rescheduling_requests");
 const feedbacksQueries = require("./queries/feedbacks");
+const coursesQueries = require("./queries/courses");
+const timeReferenceQueries = require("./queries/time_reference_queries");
+const usersQueries = require("./queries/users");
 
+const safetyLayer = require("./middleware/safetyLayer");
 
 // import the dbConfig object from another file where we can hide it.
 const dbConfig = require("./logins");
@@ -32,28 +37,30 @@ app.use(cors());
 
 //Setting up server
 const server = app.listen(process.env.PORT || 8080, function () {
-    const port = server.address().port;
-    console.log("App now running on port", port);
+  const port = server.address().port;
+  console.log("App now running on port", port);
 });
 
-
 /**
- * Gets all the new course requests (with a status = 0) and updates them to pending status.
- * 
- * The GET request to this endpoint should hold 1 parameter: the array containing all the new course requests.
- * 
+ * Gets all the new course requests (with a status = 0) and updates them to pending status and returns an Array containing all of them.
+ *
+ * This endpoint also calls the handleClassCreationLogic function as this is the endpoint that will be called
+ * by the bot repetitively. This represents a logical dependency but a dependency that is, one, essential, two, acceptable
+ * as if the new_course_request is not shown it represents a sufficient risk for the overall system for the class creation logic's
+ * dependance on it to be a problem.
+ *
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/new_course_requests", function (req, res) {
-    
+  safetyLayer.checkAuth(req, res, () => {
     sql.connect(dbConfig, async function (err) {
-        if (err) console.log(err);
-
+      if (err) console.log(err);
+      handleClassCreationLogic(sql).then(() => {
         courseRequestsQueries.getNewCourseRequests(sql, res);
-        
+      });
     });
+  });
 });
-
 
 /**
  * Creates a new Cancellation Request.
@@ -67,36 +74,38 @@ app.get("/new_course_requests", function (req, res) {
  * If the class does not exist it will give out a status of 412.
  */
 app.post("/cancellation_request", function (req, res) {
-  // Connecting to the database.
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
+  safetyLayer.checkAuth(req, res, () => {
+    // Connecting to the database.
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
 
-    const classID = req.body.class_ID;
-    const reason = req.body.reason;
-    if (reason === null) {
-      res.status(400).json({ error: "The reason can not be null." });
-      return;
-    }
-    if (classID === null) {
-      res.status(400).json({ error: "The classID can not be null." });
-      return;
-    }
+      const classID = req.body.class_ID;
+      const reason = req.body.reason;
+      if (reason === null) {
+        res.status(400).json({ error: "The reason can not be null." });
+        return;
+      }
+      if (classID === null) {
+        res.status(400).json({ error: "The classID can not be null." });
+        return;
+      }
 
-    // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-    classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-      cancellationRequestsQueries.checkIfNoPendingRequestForSameClass(
-        sql,
-        res,
-        classID,
-        () => {
-          cancellationRequestsQueries.createCancellationRequest(
-            sql,
-            res,
-            classID,
-            reason
-          );
-        }
-      );
+      // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+      classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+        cancellationRequestsQueries.checkIfNoPendingRequestForSameClass(
+          sql,
+          res,
+          classID,
+          () => {
+            cancellationRequestsQueries.createCancellationRequest(
+              sql,
+              res,
+              classID,
+              reason
+            );
+          }
+        );
+      });
     });
   });
 });
@@ -109,17 +118,19 @@ app.post("/cancellation_request", function (req, res) {
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/tutor_classes/:discord_id", function (req, res) {
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
+  safetyLayer.checkAuth(req, res, () => {
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
 
-    const discordID = req.params.discord_id;
+      const discordID = req.params.discord_id;
 
-    if (discordID === null) {
-      res.status(400).json({ error: "Discord id can not be null" });
-      return;
-    }
+      if (discordID === null) {
+        res.status(400).json({ error: "Discord id can not be null" });
+        return;
+      }
 
-    classesQueries.getTutorClasses(sql, res, discordID);
+      classesQueries.getTutorClasses(sql, res, discordID);
+    });
   });
 });
 
@@ -129,15 +140,32 @@ app.get("/tutor_classes/:discord_id", function (req, res) {
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/course_requests_number", function (req, res) {
+  safetyLayer.checkAuth(req, res, () => {
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
+      courseRequestsQueries.getNumberOfCourseRequests(sql, res);
+    });
+  });
+});
+
+/**
+ * Enables user to login using a username and password combination. If this combination is valid, it will return
+ * a token to be used in further queries.
+ *
+ * If authentication failed, the status returned is 401, for any other failure it's 400, and for success it's 200.
+ */
+app.post("/login", function (req, res) {
   sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
-    courseRequestsQueries.getNumberOfCourseRequests(sql, res);
+    console.log("yep");
+    usersQueries.login(sql, res, req.body.username, req.body.password);
   });
 });
 
 // Empty route to POST new tutor demands.
 app.post("/tutor_demand", function (req, res) {
-  console.log("Request Received: POST a tutor demand request");
+  safetyLayer.checkAuth(req, res, () => {
+    console.log("Request Received: POST a tutor demand request");
+  });
 });
 
 /**
@@ -153,51 +181,53 @@ app.post("/tutor_demand", function (req, res) {
  * If the class does not exist it will give out a status of 412.
  */
 app.post("/rescheduling_request", function (req, res) {
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
+  safetyLayer.checkAuth(req, res, () => {
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
 
-    const classID = req.body.class_ID;
-    const reason = req.body.reason;
-    const newDate = req.body.new_date;
+      const classID = req.body.class_ID;
+      const reason = req.body.reason;
+      const newDate = req.body.new_date;
 
-    if (reason === null) {
-      res.status(400).json({ error: "The reason can not be null." });
-      return;
-    }
-    if (classID === null) {
-      res.status(400).json({ error: "The classID can not be null." });
-      return;
-    }
-    if (newDate === null) {
-      res.status(400).json({ error: "The newDate can not be null." });
-      return;
-    }
-
-    if (helper_functions.isValidDateFormat(newDate)) {
-      if (helper_functions.isInTheFuture(newDate)) {
-        // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-        classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-          reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
-            sql,
-            res,
-            classID,
-            () => {
-              reschedulingRequestsQueries.createReschedulingRequest(
-                sql,
-                res,
-                classID,
-                reason,
-                newDate
-              );
-            }
-          );
-        });
-      } else {
-        res.status(402).json({ error: "NewDate is not in the future." });
+      if (reason === null) {
+        res.status(400).json({ error: "The reason can not be null." });
+        return;
       }
-    } else {
-      res.status(408).json({ error: "Unvalid date format." });
-    }
+      if (classID === null) {
+        res.status(400).json({ error: "The classID can not be null." });
+        return;
+      }
+      if (newDate === null) {
+        res.status(400).json({ error: "The newDate can not be null." });
+        return;
+      }
+
+      if (helper_functions.isValidDateFormat(newDate)) {
+        if (helper_functions.isInTheFuture(newDate)) {
+          // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+          classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+            reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
+              sql,
+              res,
+              classID,
+              () => {
+                reschedulingRequestsQueries.createReschedulingRequest(
+                  sql,
+                  res,
+                  classID,
+                  reason,
+                  newDate
+                );
+              }
+            );
+          });
+        } else {
+          res.status(402).json({ error: "NewDate is not in the future." });
+        }
+      } else {
+        res.status(408).json({ error: "Unvalid date format." });
+      }
+    });
   });
 });
 
@@ -213,31 +243,33 @@ app.post("/rescheduling_request", function (req, res) {
  * If the class does not exist it will give out a status of 412.
  */
 app.post("/feedback_creation", function (req, res) {
-  // Connecting to the database.
-  sql.connect(dbConfig, function (err) {
-    if (err) console.log(err);
+  safetyLayer.checkAuth(req, res, () => {
+    // Connecting to the database.
+    sql.connect(dbConfig, function (err) {
+      if (err) console.log(err);
 
-    const classID = req.body.class_ID;
-    const feedback = req.body.feedback;
-    if (feedback === null) {
-      res.status(400).json({ error: "The feedback note can not be null." });
-      return;
-    }
-    if (classID === null) {
-      res.status(400).json({ error: "The classID can not be null." });
-      return;
-    }
+      const classID = req.body.class_ID;
+      const feedback = req.body.feedback;
+      if (feedback === null) {
+        res.status(400).json({ error: "The feedback note can not be null." });
+        return;
+      }
+      if (classID === null) {
+        res.status(400).json({ error: "The classID can not be null." });
+        return;
+      }
 
-    // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-    classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-      feedbacksQueries.checkIfNoPendingRequestForSameClass(
-        sql,
-        res,
-        classID,
-        () => {
-          feedbacksQueries.createFeedback(sql, res, classID, feedback);
-        }
-      );
+      // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+      classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+        feedbacksQueries.checkIfNoPendingRequestForSameClass(
+          sql,
+          res,
+          classID,
+          () => {
+            feedbacksQueries.createFeedback(sql, res, classID, feedback);
+          }
+        );
+      });
     });
   });
 });
@@ -395,6 +427,39 @@ app.get("/tutors_test", function (req, res) {
   });
 });
 
+app.get("/time_test", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("select * from TimeReference", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.send(recordset);
+    });
+  });
+});
+
+app.get("/time_test_2", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query(
+      "UPDATE TimeReference SET WeekStartDate = '09/14/2022', WeekNumber = 0 WHERE WeekNumber = 1",
+      function (err, recordset) {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("Time reference updated");
+        }
+      }
+    );
+  });
+});
+
 app.get("/reschedule_test", function (req, res) {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
@@ -410,6 +475,70 @@ app.get("/reschedule_test", function (req, res) {
   });
 });
 
+/**
+ * Handles all logic related to creating classes. This function should be called as often as possible and will
+ * do the following:
+ *      - Check if more than a week occured since the last recorded week started
+ *      - If yes,
+ *              - Get all informations necessary to create new classes (the week number, day of the week, and date)
+ *              - Create a new class for each course with the right information
+ *              - Update the Time Reference record with the new week number and the date corresponding to the week start date (the saturday of the week the function ran)
+ *      - If no,
+ *              - Does nothing
+ *
+ * @param {} sql An instance of mssql connected to our database
+ */
+async function handleClassCreationLogic(sql) {
+  // Check if a week passed
+  timeReferenceQueries.checkIfWeekPassed(sql, () => {
+    timeReferenceQueries.getCurrentWeekDetails(
+      sql,
+      (lastRecordedWeekObject) => {
+        // Calculates the week number of next week
+        const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
+        coursesQueries.getAllCourses(sql, (courses) => {
+          totalClassesCreated = 0;
+          for (const course of courses) {
+            // Calculates the date of the class for this course
+            const newDate = helper_functions.getDateForDayOfWeek(course.Day);
+            // Creates the class record
+            const classCreationWorked = classesQueries.createAClass(
+              sql,
+              course.ID,
+              newWeekNumber,
+              newDate,
+              course.Day
+            );
+            // Count the number of classes created
+            if (classCreationWorked) {
+              totalClassesCreated += 1;
+            }
+          }
+          if (totalClassesCreated === courses.length) {
+            // If all are created, update time reference
+            console.log("All classes created successfuly!");
+            timeReferenceQueries.updateTimeReference(
+              sql,
+              lastRecordedWeekObject.WeekNumber,
+              newWeekNumber,
+              helper_functions.getDateForDayOfWeek("Saturday")
+            );
+            return;
+          } else {
+            // If not, send email.
+            console.log("Error creating classes.");
+            // send email
+            return;
+          }
+        });
+      }
+    );
+  });
+}
+
+// make sure it only runs in due time
+// update the date so it does saturday to friday of the week every time VV
+// update time reference
 // http://localhost:8080/change_course_requests_status_to_new
 app.get("/change_course_requests_status_to_new", function (req, res) {
   sql.connect(dbConfig, function (err) {
@@ -417,13 +546,15 @@ app.get("/change_course_requests_status_to_new", function (req, res) {
 
     const request = new sql.Request();
 
-    request.query("update CourseRequests set status = 0 where status = 1", function (err, recordset) {
-      if (err) console.log(err);
-      // send records as a response
-      res.status(200).json({
-        "message": "New course request(s) have been updated."
-      });
-      
-    });
+    request.query(
+      "update CourseRequests set status = 0 where status = 1",
+      function (err, recordset) {
+        if (err) console.log(err);
+        // send records as a response
+        res.status(200).json({
+          message: "New course request(s) have been updated.",
+        });
+      }
+    );
   });
 });

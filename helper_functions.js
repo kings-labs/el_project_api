@@ -1,5 +1,35 @@
 module.exports = {
   /**
+   * @param {*} date The date to check for.
+   * @returns True if the date is more than a week ago, false if not.
+   */
+  isMoreThanAWeekAgo: function (date) {
+    // Split the date parameter into day, month and year
+    const splittedDate = date.split("/");
+    const passedDay = splittedDate[1];
+    const passedMonth = splittedDate[0];
+    const passedYear = splittedDate[2];
+    // Split today's date into day, month and year
+    const today = new Date();
+    const currentDay = today.getDate();
+    const currentMonth = today.getMonth() + 1; // +1 because the format is 0-11
+    const currentYear = today.getFullYear();
+
+    // The days difference between the given date and today
+    const difference = getDifference(
+      passedDay,
+      passedMonth,
+      passedYear,
+      currentDay,
+      currentMonth,
+      currentYear
+    );
+    console.log("diff" + difference);
+    console.log(difference > 7);
+    return difference >= 7;
+  },
+
+  /**
    * @returns true if the class date started within 10 days or less, false if later
    */
   isLessThanTenDaysAgo: function (date) {
@@ -70,8 +100,6 @@ module.exports = {
    * @returns the week day it corresponds to.
    */
   getWeekDayFromDate: function (dateString) {
-    const [month, day, year] = dateString.split("/");
-    const date = new Date(+year, month - 1, +day);
     const weekdays = [
       "Sunday",
       "Monday",
@@ -81,7 +109,8 @@ module.exports = {
       "Friday",
       "Saturday",
     ];
-
+    const [month, day, year] = dateString.split("/");
+    const date = new Date(+year, month - 1, +day);
     return weekdays[date.getDay()];
   },
 
@@ -109,6 +138,52 @@ module.exports = {
         numericalMonth < 13
       );
     }
+  },
+
+  /**
+   * Get the date of a given day of the week for the current week (if we are Thursday 09/22/2022 and pass Friday as a parameter it will return 09/23/2022).
+   * Crucial Note: our week starts on the Saturday morning and ends on the Friday.
+   *
+   * @param {*} day The day to get the date of.
+   * @returns This day's date.
+   */
+  getDateForDayOfWeek: function (day) {
+    const weekdays = [
+      "Saturday",
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+    ];
+    const dayNumber = weekdays.indexOf(
+      day.charAt(0).toUpperCase() + day.slice(1)
+    );
+    const today = new Date();
+    const todayDayNumber = today.getDay();
+    const dateOfThatDay = new Date();
+    dateOfThatDay.setDate(today.getDate() + (dayNumber - todayDayNumber - 1));
+    let monthNumber = dateOfThatDay.getMonth() + 1;
+    if (monthNumber < 10) {
+      monthNumber = "0" + monthNumber;
+    }
+    console.log(
+      "test function: " +
+        day +
+        monthNumber +
+        "/" +
+        dateOfThatDay.getDate() +
+        "/" +
+        dateOfThatDay.getFullYear()
+    );
+    return (
+      monthNumber +
+      "/" +
+      dateOfThatDay.getDate() +
+      "/" +
+      dateOfThatDay.getFullYear()
+    );
   },
 
   /**

@@ -90,4 +90,32 @@ module.exports = {
         }
       );
   },
+
+  /**
+   * Creates a new class record. Returns true if the creation was successful and false otherwise.
+   *
+   * @param {*} sql A connected mssql instance.
+   * @param {*} courseId The class's CourseID.
+   * @param {*} weekNumber The class's week number.
+   * @param {*} date The class's date.
+   * @param {*} day The class's day.
+   */
+  createAClass: async function (sql, courseId, weekNumber, date, day) {
+    const request = new sql.Request();
+    await request
+      .input("courseID", sql.Int, courseId)
+      .input("weekNumber", sql.Int, weekNumber)
+      .input("date", sql.NVarChar, date)
+      .input("day", sql.NVarChar, day)
+      .query(
+        "INSERT INTO Classes (CourseID,Status,Week,Date,IsPaid,Day) VALUES (@courseID,'Empty',@weekNumber,@date,0,@day)",
+        function (err, recordset) {
+          if (err) {
+            return false;
+          } else {
+            return true;
+          }
+        }
+      );
+  },
 };
