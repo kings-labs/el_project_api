@@ -24,6 +24,9 @@ const cancellationRequestsQueries = require("./queries/cancellation_requests");
 const courseRequestsQueries = require("./queries/course_requests");
 const reschedulingRequestsQueries = require("./queries/rescheduling_requests");
 const feedbacksQueries = require("./queries/feedbacks");
+const tutorsQueries = require("./queries/tutors");
+const tutorDemandsQueries = require("./queries/tutor_demands");
+const TutorDemandDateOptionsLinkQueries = require("./queries/tutor_demand_date_options_link");
 const coursesQueries = require("./queries/courses");
 const timeReferenceQueries = require("./queries/time_reference_queries");
 const usersQueries = require("./queries/users");
@@ -55,14 +58,23 @@ const server = app.listen(process.env.PORT || 8080, function () {
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/new_course_requests", function (req, res) {
-  safetyLayer.checkAuth(req, res, () => {
-    sql.connect(dbConfig, async function (err) {
-      if (err) console.log(err);
-      handleClassCreationLogic(sql).then(() => {
-        courseRequestsQueries.getNewCourseRequests(sql, res);
+  try {
+    safetyLayer.checkAuth(req, res, () => {
+      sql.connect(dbConfig, async function (err) {
+        if (err) console.log(err);
+        handleClassCreationLogic(sql).then(() => {
+          courseRequestsQueries.getNewCourseRequests(sql, res);
+        });
       });
     });
-  });
+  } catch (error) {
+    helper_functions.sendErroEmailToAdmin(
+      "/new_course_requests (GET)",
+      JSON.stringify(req.body),
+      error,
+      "getting all new tutor requests"
+    );
+  }
 });
 
 /**
@@ -77,40 +89,53 @@ app.get("/new_course_requests", function (req, res) {
  * If the class does not exist it will give out a status of 412.
  */
 app.post("/cancellation_request", function (req, res) {
-  safetyLayer.checkAuth(req, res, () => {
-    // Connecting to the database.
-    sql.connect(dbConfig, function (err) {
-      if (err) console.log(err);
+  try {
+    safetyLayer.checkAuth(req, res, () => {
+      // Connecting to the database.
+      sql.connect(dbConfig, function (err) {
+        if (err) console.log(err);
 
-      const classID = req.body.class_ID;
-      const reason = req.body.reason;
-      if (reason === null) {
-        res.status(400).json({ error: "The reason can not be null." });
-        return;
-      }
-      if (classID === null) {
-        res.status(400).json({ error: "The classID can not be null." });
-        return;
-      }
+        const classID = req.body.class_ID;
+        const reason = req.body.reason;
+        if (reason === null) {
+          res.status(400).json({
+            error: "The reason can not be null.",
+          });
+          return;
+        }
+        if (classID === null) {
+          res.status(400).json({
+            error: "The classID can not be null.",
+          });
+          return;
+        }
 
-      // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-      classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-        cancellationRequestsQueries.checkIfNoPendingRequestForSameClass(
-          sql,
-          res,
-          classID,
-          () => {
-            cancellationRequestsQueries.createCancellationRequest(
-              sql,
-              res,
-              classID,
-              reason
-            );
-          }
-        );
+        // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+        classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+          cancellationRequestsQueries.checkIfNoPendingRequestForSameClass(
+            sql,
+            res,
+            classID,
+            () => {
+              cancellationRequestsQueries.createCancellationRequest(
+                sql,
+                res,
+                classID,
+                reason
+              );
+            }
+          );
+        });
       });
     });
-  });
+  } catch (error) {
+    helper_functions.sendErroEmailToAdmin(
+      "/cancellation_request (POST)",
+      JSON.stringify(req.body),
+      error,
+      "creating a cancellation request record"
+    );
+  }
 });
 
 /**
@@ -121,20 +146,31 @@ app.post("/cancellation_request", function (req, res) {
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/tutor_classes/:discord_id", function (req, res) {
-  safetyLayer.checkAuth(req, res, () => {
-    sql.connect(dbConfig, function (err) {
-      if (err) console.log(err);
+  try {
+    safetyLayer.checkAuth(req, res, () => {
+      sql.connect(dbConfig, function (err) {
+        if (err) console.log(err);
 
-      const discordID = req.params.discord_id;
+        const discordID = req.params.discord_id;
 
-      if (discordID === null) {
-        res.status(400).json({ error: "Discord id can not be null" });
-        return;
-      }
+        if (discordID === null) {
+          res.status(400).json({
+            error: "Discord id can not be null",
+          });
+          return;
+        }
 
-      classesQueries.getTutorClasses(sql, res, discordID);
+        classesQueries.getTutorClasses(sql, res, discordID);
+      });
     });
-  });
+  } catch (error) {
+    helper_functions.sendErroEmailToAdmin(
+      "/tutor_classes/:discord_id (GET)",
+      JSON.stringify(req.body),
+      error,
+      "getting all tutor classes"
+    );
+  }
 });
 
 /**
@@ -158,17 +194,104 @@ app.get("/course_requests_number", function (req, res) {
  * If authentication failed, the status returned is 401, for any other failure it's 400, and for success it's 200.
  */
 app.post("/login", function (req, res) {
-  sql.connect(dbConfig, function (err) {
-    console.log("yep");
-    usersQueries.login(sql, res, req.body.username, req.body.password);
-  });
+  try {
+    sql.connect(dbConfig, function (err) {
+      console.log("yep");
+      usersQueries.login(sql, res, req.body.username, req.body.password);
+    });
+  } catch (error) {
+    helper_functions.sendErroEmailToAdmin(
+      "/login (POST)",
+      JSON.stringify(req.body),
+      error,
+      "logging in"
+    );
+  }
 });
 
-// Empty route to POST new tutor demands.
+/**
+ * Creates a TutorDemand record.
+ * To do so, it first checks the validity of all fields, then checks if the course request specified for that
+ * course request actually exists and that the proper number of date options are passed. If all of those checks pass,
+ * it goes on to create a TutorDemand record and all the associated TutorDemandDateOptionsLink records.
+ */
 app.post("/tutor_demand", function (req, res) {
-  safetyLayer.checkAuth(req, res, () => {
-    console.log("Request Received: POST a tutor demand request");
-  });
+  try {
+    safetyLayer.checkAuth(req, res, () => {
+      sql.connect(dbConfig, function (err) {
+        if (err) console.log(err);
+        const tutorDiscordID = req.body.discordID;
+        const courseReqID = req.body.courseRequestID;
+        const dateOptions = req.body.dateOptions;
+        if (tutorDiscordID === null) {
+          res.status(400).json({
+            error: "The tutor's discord ID can not be null.",
+          });
+          return;
+        }
+        if (courseReqID === null) {
+          res.status(400).json({
+            error: "The course request ID can not be null.",
+          });
+          return;
+        }
+        if (dateOptions === null || dateOptions.length === 0) {
+          res.status(400).json({
+            error: "The date options can not be null or empty.",
+          });
+          return;
+        }
+        courseRequestsQueries.checkIfCourseReqExistsWithID(
+          sql,
+          res,
+          courseReqID,
+          () => {
+            courseRequestsQueries.checkIfDateOptionsNumberIsRight(
+              sql,
+              res,
+              courseReqID,
+              dateOptions.length,
+              () => {
+                tutorsQueries.getTutorForDiscordID(
+                  sql,
+                  res,
+                  tutorDiscordID,
+                  (tutorID) => {
+                    tutorDemandsQueries.createATutorDemand(
+                      sql,
+                      res,
+                      tutorID,
+                      courseReqID,
+                      (createdTutorDemandID) => {
+                        TutorDemandDateOptionsLinkQueries.createTutorDemandDateOptionsLinks(
+                          sql,
+                          res,
+                          createdTutorDemandID,
+                          dateOptions,
+                          () => {
+                            res.status(200).json({
+                              message: "Tutor demand created successfuly",
+                            });
+                          }
+                        );
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+      });
+    });
+  } catch (error) {
+    helper_functions.sendErroEmailToAdmin(
+      "/tutor_demand (POST)",
+      JSON.stringify(req.body),
+      error,
+      "creating a tutor demand record"
+    );
+  }
 });
 
 /**
@@ -184,54 +307,62 @@ app.post("/tutor_demand", function (req, res) {
  * If the class does not exist it will give out a status of 412.
  */
 app.post("/rescheduling_request", function (req, res) {
-  safetyLayer.checkAuth(req, res, () => {
-    sql.connect(dbConfig, function (err) {
-      if (err) console.log(err);
+  try {
+    safetyLayer.checkAuth(req, res, () => {
+      sql.connect(dbConfig, function (err) {
+        if (err) console.log(err);
+        const classID = req.body.class_ID;
+        const reason = req.body.reason;
+        const newDate = req.body.new_date;
 
-      const classID = req.body.class_ID;
-      const reason = req.body.reason;
-      const newDate = req.body.new_date;
-
-      if (reason === null) {
-        res.status(400).json({ error: "The reason can not be null." });
-        return;
-      }
-      if (classID === null) {
-        res.status(400).json({ error: "The classID can not be null." });
-        return;
-      }
-      if (newDate === null) {
-        res.status(400).json({ error: "The newDate can not be null." });
-        return;
-      }
-
-      if (helper_functions.isValidDateFormat(newDate)) {
-        if (helper_functions.isInTheFuture(newDate)) {
-          // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-          classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-            reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
-              sql,
-              res,
-              classID,
-              () => {
-                reschedulingRequestsQueries.createReschedulingRequest(
-                  sql,
-                  res,
-                  classID,
-                  reason,
-                  newDate
-                );
-              }
-            );
-          });
-        } else {
-          res.status(402).json({ error: "NewDate is not in the future." });
+        if (reason === null) {
+          res.status(400).json({ error: "The reason can not be null." });
+          return;
         }
-      } else {
-        res.status(408).json({ error: "Unvalid date format." });
-      }
+        if (classID === null) {
+          res.status(400).json({ error: "The classID can not be null." });
+          return;
+        }
+        if (newDate === null) {
+          res.status(400).json({ error: "The newDate can not be null." });
+          return;
+        }
+
+        if (helper_functions.isValidDateFormat(newDate)) {
+          if (helper_functions.isInTheFuture(newDate)) {
+            // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+            classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+              reschedulingRequestsQueries.checkIfNoPendingRequestForSameClass(
+                sql,
+                res,
+                classID,
+                () => {
+                  reschedulingRequestsQueries.createReschedulingRequest(
+                    sql,
+                    res,
+                    classID,
+                    reason,
+                    newDate
+                  );
+                }
+              );
+            });
+          } else {
+            res.status(402).json({ error: "NewDate is not in the future." });
+          }
+        } else {
+          res.status(408).json({ error: "Unvalid date format." });
+        }
+      });
     });
-  });
+  } catch (error) {
+    helper_functions.sendErroEmailToAdmin(
+      "/rescheduling_request (POST)",
+      JSON.stringify(req.body),
+      error,
+      "creating a rescheduling request record"
+    );
+  }
 });
 
 /**
@@ -246,35 +377,43 @@ app.post("/rescheduling_request", function (req, res) {
  * If the class does not exist it will give out a status of 412.
  */
 app.post("/feedback_creation", function (req, res) {
-  safetyLayer.checkAuth(req, res, () => {
-    // Connecting to the database.
-    sql.connect(dbConfig, function (err) {
-      if (err) console.log(err);
+  try {
+    safetyLayer.checkAuth(req, res, () => {
+      // Connecting to the database.
+      sql.connect(dbConfig, function (err) {
+        if (err) console.log(err);
+        const classID = req.body.class_ID;
+        const feedback = req.body.feedback;
+        if (feedback === null) {
+          res.status(400).json({ error: "The feedback note can not be null." });
+          return;
+        }
+        if (classID === null) {
+          res.status(400).json({ error: "The classID can not be null." });
+          return;
+        }
 
-      const classID = req.body.class_ID;
-      const feedback = req.body.feedback;
-      if (feedback === null) {
-        res.status(400).json({ error: "The feedback note can not be null." });
-        return;
-      }
-      if (classID === null) {
-        res.status(400).json({ error: "The classID can not be null." });
-        return;
-      }
-
-      // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
-      classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
-        feedbacksQueries.checkIfNoPendingRequestForSameClass(
-          sql,
-          res,
-          classID,
-          () => {
-            feedbacksQueries.createFeedback(sql, res, classID, feedback);
-          }
-        );
+        // Two checks are run prior to actually creating the record. Those checks are imbricated using callbacks. If both are successful, the final request will be run.
+        classesQueries.checkIfClassExistsWithID(sql, res, classID, () => {
+          feedbacksQueries.checkIfNoPendingRequestForSameClass(
+            sql,
+            res,
+            classID,
+            () => {
+              feedbacksQueries.createFeedback(sql, res, classID, feedback);
+            }
+          );
+        });
       });
     });
-  });
+  } catch (error) {
+    helper_functions.sendErroEmailToAdmin(
+      "/feedback_creation (POST)",
+      JSON.stringify(req.body),
+      error,
+      "creating a feedback record"
+    );
+  }
 });
 
 /**
@@ -493,62 +632,72 @@ app.get("/reschedule_test", function (req, res) {
  */
 async function handleClassCreationLogic(sql) {
   // Check if a week passed
-  timeReferenceQueries.checkIfWeekPassed(sql, () => {
-    timeReferenceQueries.getCurrentWeekDetails(
-      sql,
-      (lastRecordedWeekObject) => {
-        // Calculates the week number of next week
-        const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
-        coursesQueries.getAllCourses(sql, (courses) => {
-          totalClassesCreated = 0;
-          for (const course of courses) {
-            // Calculates the date of the class for this course
-            const newDate = helper_functions.getDateForDayOfWeek(course.Day);
-            // Creates the class record
-            const classCreationWorked = classesQueries.createAClass(
-              sql,
-              course.ID,
-              newWeekNumber,
-              newDate,
-              course.Day
-            );
-            // Count the number of classes created
-            if (classCreationWorked) {
-              totalClassesCreated += 1;
+  try {
+    timeReferenceQueries.checkIfWeekPassed(sql, () => {
+      timeReferenceQueries.getCurrentWeekDetails(
+        sql,
+        (lastRecordedWeekObject) => {
+          // Calculates the week number of next week
+          const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
+          coursesQueries.getAllCourses(sql, (courses) => {
+            totalClassesCreated = 0;
+            for (const course of courses) {
+              // Calculates the date of the class for this course
+              const newDate = helper_functions.getDateForDayOfWeek(course.Day);
+              // Creates the class record
+              const classCreationWorked = classesQueries.createAClass(
+                sql,
+                course.ID,
+                newWeekNumber,
+                newDate,
+                course.Day
+              );
+              // Count the number of classes created
+              if (classCreationWorked) {
+                totalClassesCreated += 1;
+              }
             }
-          }
-          if (totalClassesCreated === courses.length) {
-            // If all are created, update time reference
-            console.log("All classes created successfuly!");
-            timeReferenceQueries.updateTimeReference(
-              sql,
-              lastRecordedWeekObject.WeekNumber,
-              newWeekNumber,
-              helper_functions.getDateForDayOfWeek("Saturday")
-            );
-            return;
-          } else {
-            // If not, send email.
-            console.log("Error creating classes.");
-            // send email
-            return;
-          }
-        });
-      }
+            if (totalClassesCreated === courses.length) {
+              // If all are created, update time reference
+              console.log("All classes created successfuly!");
+              timeReferenceQueries.updateTimeReference(
+                sql,
+                lastRecordedWeekObject.WeekNumber,
+                newWeekNumber,
+                helper_functions.getDateForDayOfWeek("Saturday")
+              );
+              return;
+            } else {
+              // If not, send email.
+              console.log("Error creating classes.");
+              helper_functions.sendClasssesNotCreatedEmailToAdmin(
+                totalClassesCreated
+              );
+              return;
+            }
+          });
+        }
+      );
+    });
+  } catch (error) {
+    helper_functions.sendErroEmailToAdmin(
+      "class creation function",
+      "none, none expected",
+      error,
+      "attemtping to create classes"
     );
-  });
+  }
 }
 
 // make sure it only runs in due time
 // update the date so it does saturday to friday of the week every time VV
 // update time reference
 // http://localhost:8080/change_course_requests_status_to_new
-app.get("/change_course_requests_status_to_new", function (req, res) {
+app.put("/change_course_requests_status_to_new", function (req, res) {
   sql.connect(dbConfig, function (err) {
     if (err) console.log(err);
 
     const request = new sql.Request();
-
     request.query(
       "update CourseRequests set status = 0 where status = 1",
       function (err, recordset) {
@@ -559,5 +708,65 @@ app.get("/change_course_requests_status_to_new", function (req, res) {
         });
       }
     );
+  });
+});
+
+app.get("/tutorDemandTest", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("select * from TutorDemands", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.send(recordset);
+    });
+  });
+});
+
+app.get("/mailTest", function (req, res) {
+  helper_functions.sendClasssesNotCreatedEmailToAdmin("3");
+});
+
+app.get("/courseRequestTest", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("select * from CourseRequests", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.send(recordset);
+    });
+  });
+});
+
+app.get("/dateTest", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("select * from DateOptions", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.send(recordset);
+    });
+  });
+});
+
+app.get("/course_request_tests", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query("select * from CourseRequests", function (err, recordset) {
+      if (err) console.log(err);
+      // send records as a response
+      res.send(recordset);
+    });
   });
 });

@@ -1,4 +1,65 @@
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
+
+var nodemailer = require("nodemailer");
+
 module.exports = {
+  sendClasssesNotCreatedEmailToAdmin: function (numberCreatedClasses) {
+    var transporter = nodemailer.createTransport({
+      host: "smtp.mailtrap.io",
+      port: 2525,
+      auth: {
+        user: "85f2707c640984",
+        pass: "f3f9c8213c524f",
+      },
+    });
+
+    var mailOptions = {
+      from: "API",
+      to: "elproject.kingslabs@gmail.com",
+      subject: "[URGENT - API] Error when creating classes",
+      text: getClassCreationErrorEmail(numberCreatedClasses),
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    });
+  },
+
+  sendErroEmailToAdmin: function (
+    endpoint,
+    params,
+    errorMessage,
+    errorBriefDesc
+  ) {
+    var transporter = nodemailer.createTransport({
+      host: "smtp.mailtrap.io",
+      port: 2525,
+      auth: {
+        user: "85f2707c640984",
+        pass: "f3f9c8213c524f",
+      },
+    });
+
+    var mailOptions = {
+      from: "API",
+      to: "elproject.kingslabs@gmail.com",
+      subject: "[API] Error when " + errorBriefDesc,
+      text: getGeneralErrorEmail(endpoint, params, errorMessage),
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    });
+  },
   /**
    * @param {*} date The date to check for.
    * @returns True if the date is more than a week ago, false if not.
@@ -268,4 +329,28 @@ function getDifference(pD, pM, pY, cD, cM, cY) {
 
   // return difference between two counts
   return currentCount - passedCount;
+}
+
+function getClassCreationErrorEmail(number_of_classes_created) {
+  let message = "";
+  message += "Hello,\n\n";
+  message +=
+    "Classes where not created successfuly this week. Please dig into it!\n\n";
+  message +=
+    "Only " +
+    number_of_classes_created +
+    " classes were successfully created.\n\n";
+  message += "Good luck!\nAPI Error Tracker";
+  return message;
+}
+
+function getGeneralErrorEmail(endpoint, params, errorMessage) {
+  let message = "";
+  message += "Hi,\n\n";
+  message += "The API encountered an error you may want to adress.\n\n";
+  message += "Endpoint: " + endpoint + "\n";
+  message += "Parameters it was called with: " + params + "\n";
+  message += "Error message: " + errorMessage + "\n\n";
+  message += "Good luck!\nAPI Error Tracker";
+  return message;
 }
