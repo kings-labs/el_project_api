@@ -97,13 +97,13 @@ app.post("/cancellation_request", function (req, res) {
 
         const classID = req.body.class_ID;
         const reason = req.body.reason;
-        if (reason === null) {
+        if (reason === undefined || reason === null) {
           res.status(400).json({
             error: "The reason can not be null.",
           });
           return;
         }
-        if (classID === null) {
+        if (classID === undefined || classID === null) {
           res.status(400).json({
             error: "The classID can not be null.",
           });
@@ -153,7 +153,7 @@ app.get("/tutor_classes/:discord_id", function (req, res) {
 
         const discordID = req.params.discord_id;
 
-        if (discordID === null) {
+        if (discordID === undefined || discordID === null) {
           res.status(400).json({
             error: "Discord id can not be null",
           });
@@ -223,19 +223,23 @@ app.post("/tutor_demand", function (req, res) {
         const tutorDiscordID = req.body.discordID;
         const courseReqID = req.body.courseRequestID;
         const dateOptions = req.body.dateOptions;
-        if (tutorDiscordID === null) {
+        if (tutorDiscordID === undefined || tutorDiscordID === null) {
           res.status(400).json({
             error: "The tutor's discord ID can not be null.",
           });
           return;
         }
-        if (courseReqID === null) {
+        if (courseReqID === undefined || courseReqID === null) {
           res.status(400).json({
             error: "The course request ID can not be null.",
           });
           return;
         }
-        if (dateOptions === null || dateOptions.length === 0) {
+        if (
+          dateOptions === undefined ||
+          dateOptions === null ||
+          dateOptions.length === 0
+        ) {
           res.status(400).json({
             error: "The date options can not be null or empty.",
           });
@@ -315,15 +319,15 @@ app.post("/rescheduling_request", function (req, res) {
         const reason = req.body.reason;
         const newDate = req.body.new_date;
 
-        if (reason === null) {
+        if (reason === undefined || reason === null) {
           res.status(400).json({ error: "The reason can not be null." });
           return;
         }
-        if (classID === null) {
+        if (classID === undefined || classID === null) {
           res.status(400).json({ error: "The classID can not be null." });
           return;
         }
-        if (newDate === null) {
+        if (newDate === undefined || newDate === null) {
           res.status(400).json({ error: "The newDate can not be null." });
           return;
         }
@@ -384,11 +388,11 @@ app.post("/feedback_creation", function (req, res) {
         if (err) console.log(err);
         const classID = req.body.class_ID;
         const feedback = req.body.feedback;
-        if (feedback === null) {
+        if (feedback === undefined || feedback === null) {
           res.status(400).json({ error: "The feedback note can not be null." });
           return;
         }
-        if (classID === null) {
+        if (classID === undefined || classID === null) {
           res.status(400).json({ error: "The classID can not be null." });
           return;
         }
@@ -415,6 +419,78 @@ app.post("/feedback_creation", function (req, res) {
     );
   }
 });
+
+/**
+ * Handles all logic related to creating classes. This function should be called as often as possible and will
+ * do the following:
+ *      - Check if more than a week occured since the last recorded week started
+ *      - If yes,
+ *              - Get all informations necessary to create new classes (the week number, day of the week, and date)
+ *              - Create a new class for each course with the right information
+ *              - Update the Time Reference record with the new week number and the date corresponding to the week start date (the saturday of the week the function ran)
+ *      - If no,
+ *              - Does nothing
+ *
+ * @param {*} sql An instance of mssql connected to our database
+ */
+async function handleClassCreationLogic(sql) {
+  // Check if a week passed
+  try {
+    timeReferenceQueries.checkIfWeekPassed(sql, () => {
+      timeReferenceQueries.getCurrentWeekDetails(
+        sql,
+        (lastRecordedWeekObject) => {
+          // Calculates the week number of next week
+          const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
+          coursesQueries.getAllCourses(sql, (courses) => {
+            totalClassesCreated = 0;
+            for (const course of courses) {
+              // Calculates the date of the class for this course
+              const newDate = helper_functions.getDateForDayOfWeek(course.Day);
+              // Creates the class record
+              const classCreationWorked = classesQueries.createAClass(
+                sql,
+                course.ID,
+                newWeekNumber,
+                newDate,
+                course.Day
+              );
+              // Count the number of classes created
+              if (classCreationWorked) {
+                totalClassesCreated += 1;
+              }
+            }
+            if (totalClassesCreated === courses.length) {
+              // If all are created, update time reference
+              console.log("All classes created successfuly!");
+              timeReferenceQueries.updateTimeReference(
+                sql,
+                lastRecordedWeekObject.WeekNumber,
+                newWeekNumber,
+                helper_functions.getDateForDayOfWeek("Saturday")
+              );
+              return;
+            } else {
+              // If not, send email.
+              console.log("Error creating classes.");
+              helper_functions.sendClasssesNotCreatedEmailToAdmin(
+                totalClassesCreated
+              );
+              return;
+            }
+          });
+        }
+      );
+    });
+  } catch (error) {
+    helper_functions.sendErroEmailToAdmin(
+      "class creation function",
+      "none, none expected",
+      error,
+      "attemtping to create classes"
+    );
+  }
+}
 
 /**
  * TEST (This is a test route that needs to be removed before merging ticket T18 in)
@@ -616,78 +692,6 @@ app.get("/reschedule_test", function (req, res) {
     );
   });
 });
-
-/**
- * Handles all logic related to creating classes. This function should be called as often as possible and will
- * do the following:
- *      - Check if more than a week occured since the last recorded week started
- *      - If yes,
- *              - Get all informations necessary to create new classes (the week number, day of the week, and date)
- *              - Create a new class for each course with the right information
- *              - Update the Time Reference record with the new week number and the date corresponding to the week start date (the saturday of the week the function ran)
- *      - If no,
- *              - Does nothing
- *
- * @param {*} sql An instance of mssql connected to our database
- */
-async function handleClassCreationLogic(sql) {
-  // Check if a week passed
-  try {
-    timeReferenceQueries.checkIfWeekPassed(sql, () => {
-      timeReferenceQueries.getCurrentWeekDetails(
-        sql,
-        (lastRecordedWeekObject) => {
-          // Calculates the week number of next week
-          const newWeekNumber = lastRecordedWeekObject.WeekNumber + 1;
-          coursesQueries.getAllCourses(sql, (courses) => {
-            totalClassesCreated = 0;
-            for (const course of courses) {
-              // Calculates the date of the class for this course
-              const newDate = helper_functions.getDateForDayOfWeek(course.Day);
-              // Creates the class record
-              const classCreationWorked = classesQueries.createAClass(
-                sql,
-                course.ID,
-                newWeekNumber,
-                newDate,
-                course.Day
-              );
-              // Count the number of classes created
-              if (classCreationWorked) {
-                totalClassesCreated += 1;
-              }
-            }
-            if (totalClassesCreated === courses.length) {
-              // If all are created, update time reference
-              console.log("All classes created successfuly!");
-              timeReferenceQueries.updateTimeReference(
-                sql,
-                lastRecordedWeekObject.WeekNumber,
-                newWeekNumber,
-                helper_functions.getDateForDayOfWeek("Saturday")
-              );
-              return;
-            } else {
-              // If not, send email.
-              console.log("Error creating classes.");
-              helper_functions.sendClasssesNotCreatedEmailToAdmin(
-                totalClassesCreated
-              );
-              return;
-            }
-          });
-        }
-      );
-    });
-  } catch (error) {
-    helper_functions.sendErroEmailToAdmin(
-      "class creation function",
-      "none, none expected",
-      error,
-      "attemtping to create classes"
-    );
-  }
-}
 
 // make sure it only runs in due time
 // update the date so it does saturday to friday of the week every time VV

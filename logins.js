@@ -1,8 +1,10 @@
+require("dotenv").config();
+
 const dbConfig = {
-  user: "sa",
-  password: "KingsLabs@22/23#",
-  server: "198.244.247.123",
-  database: "enlightenlearning",
+  user: process.env.DBUSERNAME,
+  password: process.env.DBPASSWORD,
+  server: process.env.DBIP,
+  database: process.env.DBNAME,
   port: 1433,
   trustServerCertificate: true,
   encrypt: false,
