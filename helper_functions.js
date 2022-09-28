@@ -208,13 +208,13 @@ module.exports = {
    */
   getDateForDayOfWeek: function (day) {
     const weekdays = [
-      "Saturday",
-      "Sunday",
       "Monday",
       "Tuesday",
       "Wednesday",
       "Thursday",
       "Friday",
+      "Saturday",
+      "Sunday",
     ];
     const dayNumber = weekdays.indexOf(
       day.charAt(0).toUpperCase() + day.slice(1)
