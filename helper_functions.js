@@ -1,7 +1,5 @@
-const fetch = (...args) =>
-  import("node-fetch").then(({ default: fetch }) => fetch(...args));
-
 var nodemailer = require("nodemailer");
+require("dotenv").config();
 
 module.exports = {
   sendClasssesNotCreatedEmailToAdmin: function (numberCreatedClasses) {
@@ -10,7 +8,7 @@ module.exports = {
       port: 2525,
       auth: {
         user: "85f2707c640984",
-        pass: "f3f9c8213c524f",
+        pass: process.env.MAILPWD,
       },
     });
 
@@ -41,7 +39,7 @@ module.exports = {
       port: 2525,
       auth: {
         user: "85f2707c640984",
-        pass: "f3f9c8213c524f",
+        pass: process.env.MAILPWD,
       },
     });
 
