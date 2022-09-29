@@ -222,7 +222,7 @@ module.exports = {
     const today = new Date();
     const todayDayNumber = today.getDay();
     const dateOfThatDay = new Date();
-    dateOfThatDay.setDate(today.getDate() + (dayNumber - todayDayNumber));
+    dateOfThatDay.setDate(today.getDate() + (dayNumber - todayDayNumber + 1));
     let monthNumber = dateOfThatDay.getMonth() + 1;
     if (monthNumber < 10) {
       monthNumber = "0" + monthNumber;
