@@ -26,9 +26,9 @@ module.exports = {
           if (recordset.recordset.length > 0) {
             idListAsString = "(" + recordset.recordset[0].ID;
             for (let i = 1; i < recordset.recordset.length; i++) {
-              idListAsString = idListAsString + "," + recordset.recordset[i];
+              idListAsString = idListAsString + "," + recordset.recordset[i].ID;
             }
-            idListAsString += ")";
+            idListAsString = idListAsString + ")";
           }
 
           res.status(200).json({
