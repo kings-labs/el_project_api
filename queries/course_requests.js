@@ -14,7 +14,7 @@ module.exports = {
     const request = new sql.Request();
 
     request.query(
-      "SELECT CourseRequests.ID AS ID, Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, DateOptions.ID AS DateOptionsID, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0 And CourseRequests.Frequency >= (Select count(ID) from DateOptions Where CourseRequestsID = CourseRequests.ID)",
+      "SELECT CourseRequests.ID AS ID, Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, DateOptions.ID AS DateOptionsID, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0 And CourseRequests.Frequency <= (Select count(ID) from DateOptions Where CourseRequestID = CourseRequests.ID)",
       function (err, recordset) {
         if (err) {
           console.log(err);
