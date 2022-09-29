@@ -269,7 +269,7 @@ module.exports = {
     } else {
       if (toTestMonth < todayMonth) {
         return false;
-      } else if (toTestMonth > toTestMonth) {
+      } else if (toTestMonth > todayMonth) {
         return true;
       } else {
         return toTestDay > todayDay;

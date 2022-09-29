@@ -165,7 +165,7 @@ module.exports = {
             return null;
           } else {
             if (recordset.recordset[0].Status === 2) {
-              res.status(402).json({ err: "Course request was taken" });
+              res.status(410).json({ err: "Course request was taken" });
             } else {
               callback();
             }

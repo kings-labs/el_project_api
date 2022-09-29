@@ -5,7 +5,8 @@
  * 200: General success
  * 400: General failure
  * 401: Authentication failure
- * 402: If the course request status is 2 when a tutor demand is created for it.
+ * 402: Date is not in the future.
+ * 410: Course request was taken.
  * 408: Unvalid date format
  * 412: Failure because the classID passed to the request does not exist
  * 406: Failure because the class a request was made for already received a request of the same type (Cancel, Rescheduling or Feedback)
