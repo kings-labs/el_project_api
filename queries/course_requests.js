@@ -22,7 +22,7 @@ module.exports = {
             error: err,
           });
         } else {
-          const idListAsString = "";
+          let idListAsString = "";
           if (recordset.recordset.length > 0) {
             idListAsString = "(" + recordset.recordset[0].ID;
             for (let i = 1; i < recordset.recordset.length; i++) {
