@@ -26,7 +26,7 @@ module.exports = {
             result: formatResult(recordset.recordset),
           });
 
-          //updateCourseRequests(sql);
+          updateCourseRequests(sql);
         }
       }
     );
