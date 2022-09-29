@@ -4,7 +4,8 @@
 
  * 200: General success
  * 400: General failure
- * 401: authentication failure
+ * 401: Authentication failure
+ * 402: If the course request status is 2 when a tutor demand is created for it.
  * 408: Unvalid date format
  * 412: Failure because the classID passed to the request does not exist
  * 406: Failure because the class a request was made for already received a request of the same type (Cancel, Rescheduling or Feedback)
@@ -256,26 +257,33 @@ app.post("/tutor_demand", function (req, res) {
               courseReqID,
               dateOptions.length,
               () => {
-                tutorsQueries.getTutorForDiscordID(
+                courseRequestsQueries.checkIfStatusIsTwo(
                   sql,
                   res,
-                  tutorDiscordID,
-                  (tutorID) => {
-                    tutorDemandsQueries.createATutorDemand(
+                  courseReqID,
+                  () => {
+                    tutorsQueries.getTutorForDiscordID(
                       sql,
                       res,
-                      tutorID,
-                      courseReqID,
-                      (createdTutorDemandID) => {
-                        TutorDemandDateOptionsLinkQueries.createTutorDemandDateOptionsLinks(
+                      tutorDiscordID,
+                      (tutorID) => {
+                        tutorDemandsQueries.createATutorDemand(
                           sql,
                           res,
-                          createdTutorDemandID,
-                          dateOptions,
-                          () => {
-                            res.status(200).json({
-                              message: "Tutor demand created successfuly",
-                            });
+                          tutorID,
+                          courseReqID,
+                          (createdTutorDemandID) => {
+                            TutorDemandDateOptionsLinkQueries.createTutorDemandDateOptionsLinks(
+                              sql,
+                              res,
+                              createdTutorDemandID,
+                              dateOptions,
+                              () => {
+                                res.status(200).json({
+                                  message: "Tutor demand created successfuly",
+                                });
+                              }
+                            );
                           }
                         );
                       }

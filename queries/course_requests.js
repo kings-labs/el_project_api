@@ -142,6 +142,37 @@ module.exports = {
         }
       );
   },
+
+  /**
+   * Checks if the status of a given course requests is 2. If it is, it means that the course request already
+   * was given to a tutor and will throw a special error message.
+   *
+   * @param {*} sql A connected sql server.
+   * @param {*} res The object to send a reply.
+   * @param {*} courseReqId The ID of the CourseRequest to check for.
+   * @param {*} callback The function to call if status is not 2.
+   */
+  checkIfStatusIsTwo: async function (sql, res, courseReqId, callback) {
+    const request = new sql.Request();
+    await request
+      .input("courseReqId", sql.Int, courseReqId)
+      .query(
+        "SELECT Status FROM CourseRequests WHERE ID = @courseReqId",
+        function (err, recordset) {
+          if (err) {
+            console.log(err);
+            res.status(400).json({ error: err });
+            return null;
+          } else {
+            if (recordset.recordset[0].Status === 2) {
+              res.status(402).json({ err: "Course request was taken" });
+            } else {
+              callback();
+            }
+          }
+        }
+      );
+  },
 };
 
 /**
