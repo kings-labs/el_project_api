@@ -14,7 +14,7 @@ module.exports = {
     const request = new sql.Request();
 
     request.query(
-      "SELECT CourseRequests.ID AS ID, Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, DateOptions.ID AS DateOptionsID, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0",
+      "SELECT CourseRequests.ID AS ID, Subject, Frequency, Levels.Name AS LevelName, Levels.CostPerHour*CourseRequests.Duration AS Money, Duration, DateOptions.ID AS DateOptionsID, Day, Time FROM CourseRequests JOIN DateOptions ON CourseRequests.ID = DateOptions.CourseRequestID JOIN Levels ON CourseRequests.LevelID = Levels.ID where Status = 0 And CourseRequests.Frequency >= (Select count(ID) from DateOptions Where CourseRequestsID = CourseRequests.ID)",
       function (err, recordset) {
         if (err) {
           console.log(err);
@@ -22,11 +22,20 @@ module.exports = {
             error: err,
           });
         } else {
+          const idListAsString = "";
+          if (recordset.recordset.length > 0) {
+            idListAsString = "(" + recordset.recordset[0].ID;
+            for (let i = 1; i < recordset.recordset.length; i++) {
+              idListAsString = idListAsString + "," + recordset.recordset[i];
+            }
+            idListAsString += ")";
+          }
+
           res.status(200).json({
             result: formatResult(recordset.recordset),
           });
 
-          updateCourseRequests(sql);
+          updateCourseRequests(sql, idListAsString);
         }
       }
     );
@@ -140,11 +149,12 @@ module.exports = {
  *
  * @param {*} sql The mssql instance connected to the database currently used by the API.
  */
-function updateCourseRequests(sql) {
+function updateCourseRequests(sql, idListAsString) {
   const request = new sql.Request();
 
   request.query(
-    "update CourseRequests set status = 1 where status = 0",
+    "update CourseRequests set status = 1 where status = 0 and ID IN" +
+      idListAsString,
     function (err) {
       if (err) {
         console.log(err);
