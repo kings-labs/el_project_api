@@ -501,6 +501,32 @@ async function handleClassCreationLogic(sql) {
   }
 }
 
+async function sendPrivateMessages(sql, res) {
+  tutorDemandsQueries.getMessages(sql, res, (tutorDemandMessages) => {
+    console.log("REPLIIIIIES");
+    console.log(tutorDemandMessages);
+    //const cancellationRequestReplies =
+    //await cancellationRequestsQueries.getMessages(sql, res);
+    //const reschedullingRequestReplies =
+    //await reschedulingRequestsQueries.getMessages(sql, res);
+    //const feedbackReplies = await feedbacksQueries.getMessages(sql, res);
+
+    const cancellationRequestReplies = [];
+    const reschedullingRequestReplies = [];
+    const feedbackReplies = [];
+
+    const allMesssages = tutorDemandMessages.concat(
+      cancellationRequestReplies,
+      reschedullingRequestReplies,
+      feedbackReplies
+    );
+    console.log("COMPILED");
+    console.log(allMesssages);
+    console.log("RETURN");
+    res.send(allMesssages);
+  });
+}
+
 /**
  * TEST (This is a test route that needs to be removed before merging ticket T18 in)
  *
@@ -781,5 +807,28 @@ app.get("/course_request_tests", function (req, res) {
       // send records as a response
       res.send(recordset);
     });
+  });
+});
+
+app.get("/tester", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    sendPrivateMessages(sql, res);
+  });
+});
+
+app.get("/dateOptTest", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query(
+      "select * from TutorDemandDateOptionsLink",
+      function (err, recordset) {
+        if (err) console.log(err);
+        // send records as a response
+        res.send(recordset);
+      }
+    );
   });
 });
