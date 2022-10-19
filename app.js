@@ -501,32 +501,6 @@ async function handleClassCreationLogic(sql) {
   }
 }
 
-async function sendPrivateMessages(sql, res) {
-  tutorDemandsQueries.getMessages(sql, res, (tutorDemandMessages) => {
-    console.log("REPLIIIIIES");
-    console.log(tutorDemandMessages);
-    //const cancellationRequestReplies =
-    //await cancellationRequestsQueries.getMessages(sql, res);
-    //const reschedullingRequestReplies =
-    //await reschedulingRequestsQueries.getMessages(sql, res);
-    //const feedbackReplies = await feedbacksQueries.getMessages(sql, res);
-
-    const cancellationRequestReplies = [];
-    const reschedullingRequestReplies = [];
-    const feedbackReplies = [];
-
-    const allMesssages = tutorDemandMessages.concat(
-      cancellationRequestReplies,
-      reschedullingRequestReplies,
-      feedbackReplies
-    );
-    console.log("COMPILED");
-    console.log(allMesssages);
-    console.log("RETURN");
-    res.send(allMesssages);
-  });
-}
-
 /**
  * TEST (This is a test route that needs to be removed before merging ticket T18 in)
  *
@@ -810,9 +784,49 @@ app.get("/course_request_tests", function (req, res) {
   });
 });
 
-app.get("/tester", function (req, res) {
+app.get("/private_messages", function (req, res) {
   sql.connect(dbConfig, function (err) {
-    sendPrivateMessages(sql, res);
+    tutorDemandsQueries.getMessages(sql, res, (tutorDemandMessages) => {
+      cancellationRequestsQueries.getMessages(
+        sql,
+        res,
+        (cancellationRequestMessages) => {
+          feedbacksQueries.getMessages(sql, res, (feedbackMessages) => {
+            reschedulingRequestsQueries.getMessages(
+              sql,
+              res,
+              (reschedulingRequestMessages) => {
+                const allMesssages = tutorDemandMessages.concat(
+                  cancellationRequestMessages,
+                  reschedulingRequestMessages,
+                  feedbackMessages
+                );
+                if (allMesssages.length > 0) {
+                  tutorDemandsQueries.updateMessagesToSent(sql, res, () => {
+                    cancellationRequestsQueries.updateMessagesToSent(
+                      sql,
+                      res,
+                      () =>
+                        feedbacksQueries.updateMessagesToSent(sql, res, () => {
+                          reschedulingRequestsQueries.updateMessagesToSent(
+                            sql,
+                            res,
+                            () => {
+                              res.status(200).json({ messages: allMesssages });
+                            }
+                          );
+                        })
+                    );
+                  });
+                } else {
+                  res.status(200).json({ messages: allMesssages });
+                }
+              }
+            );
+          });
+        }
+      );
+    });
   });
 });
 
