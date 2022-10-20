@@ -783,3 +783,80 @@ app.get("/course_request_tests", function (req, res) {
     });
   });
 });
+
+/**
+ * Gets all the messages that have to be sent privately to tutors regarding the approval or disapproval of one of their request.
+ * Once retrieved, the requests that are included to be sent in messages are marked as sent in the database to make sure that they can only be sent once.
+ *
+ * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ */
+app.get("/private_messages", function (req, res) {
+  saferyLayer.checkAuth(req, res, () => {
+    sql.connect(dbConfig, function (err) {
+      tutorDemandsQueries.getMessages(sql, res, (tutorDemandMessages) => {
+        cancellationRequestsQueries.getMessages(
+          sql,
+          res,
+          (cancellationRequestMessages) => {
+            feedbacksQueries.getMessages(sql, res, (feedbackMessages) => {
+              reschedulingRequestsQueries.getMessages(
+                sql,
+                res,
+                (reschedulingRequestMessages) => {
+                  const allMesssages = tutorDemandMessages.concat(
+                    cancellationRequestMessages,
+                    reschedulingRequestMessages,
+                    feedbackMessages
+                  );
+                  if (allMesssages.length > 0) {
+                    tutorDemandsQueries.updateMessagesToSent(sql, res, () => {
+                      cancellationRequestsQueries.updateMessagesToSent(
+                        sql,
+                        res,
+                        () =>
+                          feedbacksQueries.updateMessagesToSent(
+                            sql,
+                            res,
+                            () => {
+                              reschedulingRequestsQueries.updateMessagesToSent(
+                                sql,
+                                res,
+                                () => {
+                                  res
+                                    .status(200)
+                                    .json({ messages: allMesssages });
+                                }
+                              );
+                            }
+                          )
+                      );
+                    });
+                  } else {
+                    res.status(200).json({ messages: allMesssages });
+                  }
+                }
+              );
+            });
+          }
+        );
+      });
+    });
+  });
+});
+
+app.get("/dateOptTest", function (req, res) {
+  sql.connect(dbConfig, function (err) {
+    if (err) console.log(err);
+
+    const request = new sql.Request();
+
+    request.query(
+      "select * from TutorDemandDateOptionsLink",
+      function (err, recordset) {
+        if (err) console.log(err);
+        // send records as a response
+        res.send(recordset);
+      }
+    );
+  });
+});
