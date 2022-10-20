@@ -136,7 +136,7 @@ async function messageDataCleaner(listOfMessages) {
         messageData.NewDate +
         " has not been accepted. As additional information, the reason you gave for that request was '" +
         messageData.Reason +
-        "'. If you still want to cancel this class, please contact an administrator and/or try again. Thanks!";
+        "'. If you still want to reschedule this class, please contact an administrator and/or try again. Thanks!";
     } else {
       messageContent =
         "Great news! Your request to reschedule your " +

@@ -114,9 +114,9 @@ async function messageDataCleaner(listOfMessages) {
         messageData.Name +
         " " +
         messageData.Subject +
-        " class you applied to take on on " +
+        " class you applied to take on, on " +
         messageData.timeString +
-        " has been taken by another tutor. Thanks!";
+        " has been unsuccessful. Thanks!";
     } else {
       messageContent =
         "Hi " +
@@ -133,7 +133,7 @@ async function messageDataCleaner(listOfMessages) {
         messageData.Duration +
         " hours/class lesson at a " +
         messageData.Name +
-        " level that will be compensated at a rate of " +
+        " level that will be compensated at a rate of £" +
         messageData.Duration * messageData.CostPerHour +
         "/class. The first point of contact should be the student's parent. " +
         messageData.ParentFirstName +
@@ -143,7 +143,7 @@ async function messageDataCleaner(listOfMessages) {
         messageData.Email +
         " or by phone at " +
         messageData.PhoneNumber +
-        ". Thank you for applying to get this student!";
+        ". Thank you for applying to teach this course!";
     }
     message = {
       discordID: messageData.DiscordID,
