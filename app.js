@@ -784,6 +784,12 @@ app.get("/course_request_tests", function (req, res) {
   });
 });
 
+/**
+ * Gets all the messages that have to be sent privately to tutors regarding the approval or disapproval of one of their request.
+ * Once retrieved, the requests that are included to be sent in messages are marked as sent in the database to make sure that they can only be sent once.
+ *
+ * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
+ */
 app.get("/private_messages", function (req, res) {
   sql.connect(dbConfig, function (err) {
     tutorDemandsQueries.getMessages(sql, res, (tutorDemandMessages) => {
