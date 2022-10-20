@@ -65,7 +65,100 @@ module.exports = {
         }
       );
   },
+
+  /**
+   * Gets all the rescheduling requests that have been approved or disapproved and that have not yet been sent to the tutors.
+   * The returned value is a list of objects containing the DiscordID of the tutor to send a message to and a string made according to the models presented on
+   * ClickUp and filled with the data relative to the rescheduling request a message is to be sent about.
+   *
+   * @param {*} sql A connected mssql instance.
+   * @param {*} res The object to use to send a response to the client.
+   * @param {*} callback The function to call with the retrieved list of messages.
+   */
+  getMessages: async function (sql, res, callback) {
+    const request = new sql.Request();
+    await request.query(
+      "SELECT Tutors.DiscordID, ReschedulingRequests.Status, ReschedulingRequests.Reason,ReschedulingRequests.Date as NewDate, Classes.Date, Courses.Subject,Students.FirstName, Students.LastName FROM ReschedulingRequests INNER JOIN Classes ON Classes.ID = ReschedulingRequests.ClassID INNER JOIN Courses ON Courses.ID = Classes.CourseID INNER JOIN Students ON Students.ID = Courses.StudentID INNER JOIN Tutors on Tutors.ID = Courses.TutorID WHERE ReschedulingRequests.Status IS NOT NULL AND ReschedulingRequests.isSent=0",
+      async function (err, recordset) {
+        if (err) {
+          res.status(400).json({ err: err });
+        }
+        cleanList = await messageDataCleaner(recordset.recordset);
+        callback(cleanList);
+      }
+    );
+  },
+
+  /**
+   * Updates all the records that could be selected to be sent to the status of 'sent'. Effectively, once messages are retrieved to be sent, this function unables
+   * to switch the value of their 'isSent' field from 0 to 1 to make sure they are sent only once.
+   *
+   * @param {*} sql A connected mssql instance.
+   * @param {*} res The object to send a response with.
+   * @param {*} callback The function to call once the request is completed.
+   */
+  updateMessagesToSent: async function (sql, res, callback) {
+    const request = new sql.Request();
+    await request.query(
+      "UPDATE ReschedulingRequests SET isSent = 1 WHERE ReschedulingRequests.Status IS NOT NULL AND ReschedulingRequests.isSent=0",
+      function (err, recordset) {
+        if (err) {
+          res.status(400).json({ err: err });
+        }
+        console.log("Rescheduling requests messages updated.");
+        callback();
+      }
+    );
+  },
 };
+
+/**
+ * Transorms a list of data relative to rescheduling request message into a list of objects containing the DiscordID to send the message to and the string to send.
+ * This string is made according to the schema that can be found on ClickUp and is filled with the appropriate data.
+ *
+ * @param {*} listOfMessages list of the data that must be included in each message.
+ * @returns the list of message objects (discordID of the message's recipient and message string).
+ */
+async function messageDataCleaner(listOfMessages) {
+  cleanedList = [];
+  listOfMessages.forEach((messageData) => {
+    if (messageData.Status === 0) {
+      messageContent =
+        "We are sorry, your request to reschedule your " +
+        messageData.Subject +
+        " class with " +
+        messageData.FirstName +
+        " " +
+        messageData.LastName +
+        " from " +
+        messageData.Date +
+        " to " +
+        messageData.NewDate +
+        " has not been accepted. As additional information, the reason you gave for that request was '" +
+        messageData.Reason +
+        "'. If you still want to reschedule this class, please contact an administrator and/or try again. Thanks!";
+    } else {
+      messageContent =
+        "Great news! Your request to reschedule your " +
+        messageData.Subject +
+        " class with " +
+        messageData.FirstName +
+        " " +
+        messageData.LastName +
+        " from " +
+        messageData.Date +
+        " to " +
+        messageData.NewDate +
+        " was accepted and well recorded! Please make note of the new date! Thanks!";
+    }
+    message = {
+      discordID: messageData.DiscordID,
+      message: messageContent,
+    };
+    cleanedList.push(message);
+  });
+  return cleanedList;
+}
 
 /**
  * This function actually handles the calculations and requests needed to create a rescheduling request.
