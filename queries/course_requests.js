@@ -182,18 +182,17 @@ module.exports = {
  */
 function updateCourseRequests(sql, idListAsString) {
   const request = new sql.Request();
-
-  request.query(
-    "update CourseRequests set status = 1 where status = 0 and ID IN" +
-      idListAsString,
-    function (err) {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log("New course request(s) have been updated.");
-      }
+  const requestString = "update CourseRequests set status = 1 where status = 0";
+  if (idListAsString != "") {
+    requestString += "and ID IN" + idListAsString;
+  }
+  request.query(requestString, function (err) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("New course request(s) have been updated.");
     }
-  );
+  });
 }
 
 /**
