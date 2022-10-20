@@ -791,7 +791,7 @@ app.get("/course_request_tests", function (req, res) {
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/private_messages", function (req, res) {
-  saferyLayer.checkAuth(req, res, () => {
+  safetyLayer.checkAuth(req, res, () => {
     sql.connect(dbConfig, function (err) {
       tutorDemandsQueries.getMessages(sql, res, (tutorDemandMessages) => {
         cancellationRequestsQueries.getMessages(
