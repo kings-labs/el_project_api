@@ -791,47 +791,55 @@ app.get("/course_request_tests", function (req, res) {
  * If successful, the request will return a status of 200, if not it will return the error as well as a status of 400.
  */
 app.get("/private_messages", function (req, res) {
-  sql.connect(dbConfig, function (err) {
-    tutorDemandsQueries.getMessages(sql, res, (tutorDemandMessages) => {
-      cancellationRequestsQueries.getMessages(
-        sql,
-        res,
-        (cancellationRequestMessages) => {
-          feedbacksQueries.getMessages(sql, res, (feedbackMessages) => {
-            reschedulingRequestsQueries.getMessages(
-              sql,
-              res,
-              (reschedulingRequestMessages) => {
-                const allMesssages = tutorDemandMessages.concat(
-                  cancellationRequestMessages,
-                  reschedulingRequestMessages,
-                  feedbackMessages
-                );
-                if (allMesssages.length > 0) {
-                  tutorDemandsQueries.updateMessagesToSent(sql, res, () => {
-                    cancellationRequestsQueries.updateMessagesToSent(
-                      sql,
-                      res,
-                      () =>
-                        feedbacksQueries.updateMessagesToSent(sql, res, () => {
-                          reschedulingRequestsQueries.updateMessagesToSent(
+  saferyLayer.checkAuth(req, res, () => {
+    sql.connect(dbConfig, function (err) {
+      tutorDemandsQueries.getMessages(sql, res, (tutorDemandMessages) => {
+        cancellationRequestsQueries.getMessages(
+          sql,
+          res,
+          (cancellationRequestMessages) => {
+            feedbacksQueries.getMessages(sql, res, (feedbackMessages) => {
+              reschedulingRequestsQueries.getMessages(
+                sql,
+                res,
+                (reschedulingRequestMessages) => {
+                  const allMesssages = tutorDemandMessages.concat(
+                    cancellationRequestMessages,
+                    reschedulingRequestMessages,
+                    feedbackMessages
+                  );
+                  if (allMesssages.length > 0) {
+                    tutorDemandsQueries.updateMessagesToSent(sql, res, () => {
+                      cancellationRequestsQueries.updateMessagesToSent(
+                        sql,
+                        res,
+                        () =>
+                          feedbacksQueries.updateMessagesToSent(
                             sql,
                             res,
                             () => {
-                              res.status(200).json({ messages: allMesssages });
+                              reschedulingRequestsQueries.updateMessagesToSent(
+                                sql,
+                                res,
+                                () => {
+                                  res
+                                    .status(200)
+                                    .json({ messages: allMesssages });
+                                }
+                              );
                             }
-                          );
-                        })
-                    );
-                  });
-                } else {
-                  res.status(200).json({ messages: allMesssages });
+                          )
+                      );
+                    });
+                  } else {
+                    res.status(200).json({ messages: allMesssages });
+                  }
                 }
-              }
-            );
-          });
-        }
-      );
+              );
+            });
+          }
+        );
+      });
     });
   });
 });
