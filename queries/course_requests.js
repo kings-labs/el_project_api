@@ -182,7 +182,7 @@ module.exports = {
  */
 function updateCourseRequests(sql, idListAsString) {
   const request = new sql.Request();
-  const requestString = "update CourseRequests set status = 1 where status = 0";
+  let requestString = "update CourseRequests set status = 1 where status = 0";
   if (idListAsString != "") {
     requestString += "and ID IN" + idListAsString;
   }
